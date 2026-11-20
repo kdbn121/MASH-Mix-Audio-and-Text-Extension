@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="color-scheme" content="light dark">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MASH-Mix</title>
+<link rel="stylesheet" href="sidepanel.css">
+</head>
+<body>
+<header>
+  <h1>MASH-Mix</h1>
+  <span class="tag">Measure a song. Find its key and its tempo.</span>
+</header>
+
+<section class="card">
+  <h2>1. Audio</h2>
+  <div id="drop" role="button" tabindex="0" aria-label="Choose an audio file">
+    <div class="big">Drop an audio file here</div>
+    <div class="small">mp3, wav, flac, ogg, opus, m4a and more. The file never leaves this machine.</div>
+  </div>
+  <input type="file" id="file" accept="audio/*,video/*">
+  <div class="chosen" id="chosen">No file chosen</div>
+
+  <div class="filecard" id="filecard" hidden>
+    <div class="fc-top">
+      <div class="fc-min">
+        <div class="fc-name" id="fcName"></div>
+        <div class="fc-sub" id="fcSub"></div>
+      </div>
+      <span class="badge" id="fcBadge">attached</span>
+    </div>
+
+    <div class="fc-measure" id="fcMeasure" hidden>
+      <div class="fc-measure-grid" id="fcMeasureGrid">
+        <div class="fc-item">
+          <span class="fc-label">Peak</span>
+          <span class="fc-value pending">measuring...</span>
+        </div>
+        <div class="fc-item">
+          <span class="fc-label">Loudness</span>
+          <span class="fc-value pending">measuring...</span>
+        </div>
+        <div class="fc-item">
+          <span class="fc-label">Clipped</span>
+          <span class="fc-value pending">measuring...</span>
+        </div>
+        <div class="fc-item">
+          <span class="fc-label">DC offset</span>
+          <span class="fc-value pending">measuring...</span>
+        </div>
+        <div class="fc-item">
+          <span class="fc-label">Head silence</span>
+          <span class="fc-value pending">measuring...</span>
+        </div>
+        <div class="fc-item">
+          <span class="fc-label">Crest</span>
+          <span class="fc-value pending">measuring...</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="fc-pitch" id="fcPitch" hidden>
+      <div class="fc-pitch-title">Own pitch and speed</div>
+      <div class="fc-pitch-grid">
+        <div class="fc-item">
+          <span class="fc-label">Pitch</span>
+          <span class="fc-value" id="fcPitchValue">-</span>
+        </div>
+        <div class="fc-item">
+          <span class="fc-label">Speed</span>
+          <span class="fc-value" id="fcSpeedValue">-</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="fc-grid" id="fcGrid"></div>
+    <button type="button" class="fc-clear" id="fcClear">Remove this file</button>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Lyrics</h2>
+  <div class="engine" id="engine">
+    <span class="dot" id="engineDot"></span>
+    <span id="engineText">Looking for the local engine</span>
+  </div>
+  <p class="hint" id="engineHint"></p>
+  <div class="row2">
+    <label class="row">
+      <span>Language</span>
+      <select id="lang">
+        <option value="bn-BD" selected>bn-BD, Bangladeshi Bangla</option>
+        <option value="bn-IN">bn-IN, Indian Bengali</option>
+        <option value="bn">bn, automatic region</option>
+        <option value="">Auto detect</option>
+      </select>
+    </label>
+    <label class="row">
+      <span>Script</span>
+      <select id="script">
+        <option value="bangla" selected>Bangla</option>
+        <option value="banglish">Banglish</option>
+      </select>
+    </label>
+  </div>
+  <button id="lyrics" disabled>Get the lyrics</button>
+  <div class="status" id="status" role="status" aria-live="polite"></div>
+  <div class="lines" id="lines" hidden></div>
+  <div class="dl" id="dl" hidden></div>
+  <div class="speech" id="speech" hidden>
+    <button type="button" class="ghost" id="speak">Speak the lyrics</button>
+    <audio id="player" controls hidden></audio>
+  </div>
+</section>
+
+<footer>
+  <span class="licence">MASH-Mix-Audio-and-Text. Copyright (c) 2026 MASH (Khaled Bhuiyan). MIT Licence.</span>
+  <span class="licence"><a id="optionsLink" href="#">Engine settings</a></span>
+</footer>
+
+<script src="../core/core.js"></script>
+<script src="sidepanel.js"></script>
+</body>
+</html>
