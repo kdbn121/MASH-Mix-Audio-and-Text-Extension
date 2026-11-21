@@ -59,6 +59,7 @@
   var qualitySel = document.getElementById('quality');
   var lyricsButton = document.getElementById('lyrics');
   var statusEl = document.getElementById('status');
+  var progressEl = document.getElementById('progress');
   var linesEl = document.getElementById('lines');
   var dlEl = document.getElementById('dl');
   var speechEl = document.getElementById('speech');
@@ -164,7 +165,8 @@
     languageScripts: LANGUAGE_SCRIPTS,
     languageOrder: LANGUAGE_ORDER,
     scriptsFor: scriptsFor,
-    nativeScript: nativeScript
+    nativeScript: nativeScript,
+    setBusy: setBusy
   };
 
   /**
@@ -274,6 +276,21 @@
   function updateLyricsButton() {
     lyricsButton.disabled = !(picked && engineReady);
     urlButton.disabled = !(sourceUrl && engineReady);
+  }
+
+  /**
+   * Say that the engine is working, or that it is not any more.
+   *
+   * The bar under the line that says what is going on moves while the engine
+   * works, so a long run is not a frozen panel. The buttons are held down
+   * while it works, because a second run would only fight the first one.
+   */
+  function setBusy(busy) {
+    progressEl.hidden = !busy;
+    if (busy) {
+      lyricsButton.disabled = true;
+      urlButton.disabled = true;
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -498,6 +515,7 @@
     var words = '';
     var from = (meta && meta.lyrics_source) || '';
     if (from === 'site subtitles') words = 'from the page subtitles';
+    else if (from === 'video ocr') words = 'read off the picture of the video';
     else if (from === 'speech model') words = 'read by the model';
 
     urlGrid.innerHTML =
@@ -822,6 +840,7 @@
     setBadge('working');
     statusEl.textContent = working;
     statusEl.className = 'status';
+    setBusy(true);
     try {
       var response = await fetch(engineUrl + endpoint, { method: 'POST', body: form });
       var data = await response.json();
@@ -837,6 +856,7 @@
       statusEl.textContent = String(err.message || err);
       statusEl.className = 'status err';
     } finally {
+      setBusy(false);
       updateLyricsButton();
     }
   }

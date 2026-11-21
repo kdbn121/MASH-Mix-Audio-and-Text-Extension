@@ -183,6 +183,17 @@ second road, so the copy works even where the clipboard of the browser is
 not allowed. Neither action needs a permission the extension did not already
 have, and the file is written on your own machine.
 
+### While the engine works
+
+Under the line that says what is happening, such as **The engine is fetching
+the link and writing the lyrics.**, a bar moves while the engine is busy. A
+run that takes minutes is not a frozen panel.
+
+The bar goes away when the work is done or when it failed. The buttons are
+held down while it works, because a second run would only fight the first
+one. A reader who asks for less movement gets a still bar instead, and the
+bar needs no permission the extension did not already have.
+
 ### The engine line
 
 The dot under **2. Lyrics** says whether the engine was found.

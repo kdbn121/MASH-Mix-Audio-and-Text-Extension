@@ -78,6 +78,13 @@ exists for the node test and audit tooling.
 17. **The outcome is shown at the foot of the panel.** The final text, the
     language, the script it was written in and the number of lines, with a
     copy and a download that need no permission the extension did not have.
+18. **A long run must not look like a frozen panel.** The bar under the line
+    that says what the engine is doing moves while it works, and goes away
+    when the work is done or has failed. The buttons are held down while it
+    works, because a second run would only fight the first one.
+19. **The panel says where the words came from, all three ways.** The
+    subtitles the page carries, the words read off the picture of a karaoke,
+    and the words a model heard. They are not the same claim.
 
 ## The analysis rules that were bugs once
 

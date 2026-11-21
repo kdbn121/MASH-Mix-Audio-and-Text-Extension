@@ -243,6 +243,31 @@ button.ghost {
 .status.err { color: #ff7b72; }
 .status.ok { color: var(--ok); }
 
+/* the bar that moves under the line that says what the engine is doing */
+.progress {
+  margin-top: 8px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+.progress[hidden] { display: none; }
+.progress-bar {
+  height: 100%;
+  width: 38%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0), var(--accent), rgba(0, 0, 0, 0));
+  animation: mash-mix-progress 1.25s ease-in-out infinite;
+}
+@keyframes mash-mix-progress {
+  from { transform: translateX(-130%); }
+  to { transform: translateX(363%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .progress-bar { animation: none; width: 100%; opacity: .55; }
+}
+
 /* the player for the song that was attached */
 .songplay {
   margin-top: 12px;

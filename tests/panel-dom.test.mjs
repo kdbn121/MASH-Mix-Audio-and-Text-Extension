@@ -37,6 +37,22 @@ function languagesOfPage() {
   return values;
 }
 
+/** The ids the page marks as hidden when it opens. */
+function hiddenIdsOfPage() {
+  const ids = [];
+  const pattern = /<[a-zA-Z][^>]*>/g;
+  let match = pattern.exec(PAGE);
+  while (match) {
+    const tag = match[0];
+    if (/\shidden(\s|=|>|$)/.test(tag)) {
+      const id = tag.match(/\bid="([^"]+)"/);
+      if (id) ids.push(id[1]);
+    }
+    match = pattern.exec(PAGE);
+  }
+  return ids;
+}
+
 /** A small element that behaves enough like the real one. */
 class El {
   constructor(tag) {
@@ -147,12 +163,20 @@ const LYRICS = {
  * The page is read for the language box, the engine is stood in for, and the
  * clipboard and the file save are recorded so the test can look at them.
  */
-function loadPanel() {
+function loadPanel(options) {
+  const settings = options || {};
   const elements = new Map();
   const calls = [];
   const clipboard = { text: '' };
   const saved = [];
   const copied = [];
+
+  // The answer of the engine can be held back, so the panel can be looked at
+  // while it is still working.
+  let release = null;
+  const held = new Promise((resolve) => {
+    release = resolve;
+  });
 
   const document = {
     body: new El('body'),
@@ -182,6 +206,11 @@ function loadPanel() {
     langSel.appendChild(opt);
   }
   langSel.value = (languages.find((one) => one.selected) || languages[0]).value;
+
+  // The parts of the page that start out of sight start out of sight here too.
+  for (const id of hiddenIdsOfPage()) {
+    document.getElementById(id).hidden = true;
+  }
 
   class FakeBlob {
     constructor(parts, options) {
@@ -228,6 +257,7 @@ function loadPanel() {
           }
         };
       }
+      if (settings.hold) await held;
       return {
         ok: true,
         status: 200,
@@ -253,7 +283,8 @@ function loadPanel() {
     copied,
     langSel,
     scriptSel: elements.get('script') || document.getElementById('script'),
-    panel: sandbox.MASH_MIX.panel
+    panel: sandbox.MASH_MIX.panel,
+    release: () => release()
   };
 }
 
@@ -457,4 +488,42 @@ test('the engine is asked for the script that was chosen', async () => {
 
 test('the button says what it gets', () => {
   assert.match(PAGE, /Get the Lyrics \/ Text/);
+});
+
+test('a bar moves under the line that says what the engine is doing', async () => {
+  const dom = loadPanel({ hold: true });
+  await tick();
+
+  const progress = dom.document.getElementById('progress');
+  assert.equal(progress.hidden, true, 'the bar is away when nothing is going on');
+
+  dom.document.getElementById('url').value = 'https://www.youtube.com/watch?v=296Gi_nnbho';
+  dom.document.getElementById('url').dispatch('input', {});
+  dom.document.getElementById('urlFetch').click();
+  await tick();
+
+  assert.equal(progress.hidden, false, 'the bar is there while the engine works');
+  assert.equal(
+    dom.document.getElementById('status').textContent,
+    'The engine is fetching the link and writing the lyrics.',
+    'the line under the bar says what is going on'
+  );
+
+  dom.release();
+  await tick();
+  await tick();
+
+  assert.equal(progress.hidden, true, 'the bar is away when the work is done');
+});
+
+test('the bar is away when the engine fails', async () => {
+  const dom = loadPanel();
+  await tick();
+
+  const progress = dom.document.getElementById('progress');
+  dom.panel.setBusy(true);
+  assert.equal(progress.hidden, false, 'the bar is there while the engine works');
+
+  dom.panel.setBusy(false);
+  assert.equal(progress.hidden, true, 'the bar is away when the work stops');
 });

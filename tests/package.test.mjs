@@ -322,7 +322,23 @@ test('the outcome of the run is at the foot of the panel', () => {
   assert.match(script, /new Blob\(\[text\]/);
 });
 
+test('a bar moves under the line that says what the engine is doing', () => {
+  const panel = read('src/sidepanel/sidepanel.html');
+  // The bar sits under the line that carries the news.
+  assert.match(panel, /id="status"[\s\S]*?id="progress"/);
+  assert.match(panel, /class="progress-bar"/);
+  const style = read('src/sidepanel/sidepanel.css');
+  assert.match(style, /@keyframes mash-mix-progress/);
+  assert.match(style, /\.progress-bar[\s\S]*?animation:/);
+  // A reader who asks for less movement still gets a bar.
+  assert.match(style, /prefers-reduced-motion: reduce/);
+  const script = read('src/sidepanel/sidepanel.js');
+  assert.match(script, /function setBusy\(busy\)/);
+  assert.match(script, /progressEl\.hidden = !busy/);
+});
+
 test('the language of the audio can be left to the engine', () => {
+
   const panel = read('src/sidepanel/sidepanel.html');
   assert.match(panel, /<option value="auto" selected>Auto, any language<\/option>/);
   for (const code of ['en', 'hi', 'ur', 'ar', 'ru', 'zh', 'ja', 'ko']) {
