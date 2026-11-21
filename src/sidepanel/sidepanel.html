@@ -118,8 +118,40 @@
       </select>
     </label>
   </div>
+  <label class="row">
+    <span>Model</span>
+    <select id="quality">
+      <option value="auto" selected>Auto, the best one that fits</option>
+      <option value="best">Best quality, the slow one</option>
+      <option value="fast">Fast, the quick one</option>
+    </select>
+  </label>
   <button id="lyrics" disabled>Get the lyrics</button>
   <div class="status" id="status" role="status" aria-live="polite"></div>
+
+  <div class="songplay" id="songplay" hidden>
+    <div class="sp-top">
+      <button type="button" class="sp-play" id="songPlay" aria-label="Play the song">
+        <svg class="sp-ico sp-ico-play" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M8 5v14l11-7z"></path>
+        </svg>
+        <svg class="sp-ico sp-ico-pause" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M6 5h4v14H6zM14 5h4v14h-4z"></path>
+        </svg>
+      </button>
+      <div class="sp-mid">
+        <input type="range" class="sp-seek" id="songSeek" min="0" max="1" step="0.01" value="0"
+          aria-label="Seek in the song">
+        <div class="sp-times">
+          <span id="songNow">0:00</span>
+          <span id="songTotal">0:00</span>
+        </div>
+      </div>
+    </div>
+    <div class="sp-hint" id="songHint">The song plays from this machine. Nothing is sent anywhere.</div>
+    <audio id="song" preload="metadata"></audio>
+  </div>
+
   <div class="lines" id="lines" hidden></div>
   <div class="dl" id="dl" hidden></div>
   <div class="speech" id="speech" hidden>

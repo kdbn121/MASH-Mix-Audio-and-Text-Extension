@@ -43,6 +43,14 @@ exists for the node test and audit tooling.
 9. **The engine needs CORS for the local origins.** The browser holds the
    extension to its own rules for a call that comes from another origin, so
    the engine answers with the header for the local origins only.
+10. **The player plays the local file.** The song is handed to the player as
+    an object address made from the file the user attached, so it plays in
+    the browser without anything being sent anywhere. The address is let go
+    of when the file is replaced or removed, or the browser holds on to it
+    for the life of the panel.
+11. **A lyric line carries the song to its moment.** The lines carry the time
+    they start at, so clicking one takes the song there and marks the line
+    under the playhead while the song runs.
 
 ## The analysis rules that were bugs once
 

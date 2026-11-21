@@ -15,6 +15,8 @@ your own machine.
 
 ![The side panel with the lyrics of the song and the engine found](screenshots/panel-lyrics.png)
 
+![The side panel with the player under the lyrics button and the lyrics of a Bangla song](screenshots/panel-player.png)
+
 ![The side panel showing the steps for a new computer when the engine is not running](screenshots/panel-setup-guide.png)
 
 ## Install
@@ -56,6 +58,35 @@ Every number is computed in the browser from the decoded audio.
 With the engine running, the panel also writes the lyrics of the song, with
 the timestamps, and offers the subtitle files to download. It can also speak
 the lyrics.
+
+### The player
+
+Under the **Get the lyrics** button there is a player for the song itself.
+
+| What you see | What it does |
+|---|---|
+| The round button | Plays the song and pauses it again |
+| The bar | Moves with the song and takes it to any moment when you drag it |
+| The two times | The moment the song is at and the length of the song |
+
+The song plays straight from the file you attached, in the browser, on your
+machine. Nothing is sent anywhere to make it play.
+
+**Click a lyric line and the song goes to that line.** The line you clicked is
+the moment it starts at, and the line under the playhead is marked while the
+song runs, so the words can be followed as they are sung.
+
+### Choosing the model
+
+The **Model** choice tells the engine which recogniser to reach for.
+
+| The choice | What it means |
+|---|---|
+| Auto, the best one that fits | The engine picks the model that suits the language and falls back when one cannot be loaded |
+| Best quality, the slow one | The strongest model, and the slowest |
+| Fast, the quick one | The quick model, for a short clip or a slow computer |
+
+The panel says which model did the work once the lyrics are ready.
 
 ### The engine line
 

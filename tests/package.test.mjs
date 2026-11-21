@@ -126,6 +126,73 @@ test('the settings page carries the same guide and can test the engine', () => {
   assert.match(script, /test\.addEventListener/);
 });
 
+test('the panel has a player with a play button, a bar and the time', () => {
+  const panel = read('src/sidepanel/sidepanel.html');
+  assert.match(panel, /id="songPlay"/);
+  assert.match(panel, /id="songSeek"/);
+  assert.match(panel, /id="songNow"/);
+  assert.match(panel, /id="songTotal"/);
+  assert.match(panel, /id="song"/);
+  assert.match(panel, /type="range"[^>]*id="songSeek"/s);
+});
+
+test('the player sits in the lyrics section under the lyrics button', () => {
+  const panel = read('src/sidepanel/sidepanel.html');
+  const button = panel.indexOf('id="lyrics"');
+  const player = panel.indexOf('id="songplay"');
+  assert.ok(button > -1, 'the lyrics button is there');
+  assert.ok(player > button, 'the player comes after the lyrics button');
+  const section = panel.indexOf('2. Lyrics');
+  assert.ok(section > -1 && player > section, 'the player is in the lyrics section');
+});
+
+test('the player reads the file in the browser and sends it nowhere', () => {
+  const script = read('src/sidepanel/sidepanel.js');
+  assert.match(script, /URL\.createObjectURL\(file\)/);
+  assert.match(script, /URL\.revokeObjectURL/);
+  assert.doesNotMatch(script, /songAudio\.src\s*=\s*engineUrl/);
+});
+
+test('the player plays and pauses on the button', () => {
+  const script = read('src/sidepanel/sidepanel.js');
+  assert.match(script, /songPlay\.addEventListener\('click', toggleSong\)/);
+  assert.match(script, /songAudio\.paused/);
+  assert.match(script, /songAudio\.play\(\)/);
+  assert.match(script, /songAudio\.pause\(\)/);
+});
+
+test('the player bar moves with the song and seeks when it is dragged', () => {
+  const script = read('src/sidepanel/sidepanel.js');
+  assert.match(script, /songAudio\.addEventListener\('timeupdate'/);
+  assert.match(script, /songSeek\.value\s*=\s*String\(songAudio\.currentTime\)/);
+  assert.match(script, /songSeek\.addEventListener\('change'/);
+  assert.match(script, /seekSong\(Number\(songSeek\.value\)\)/);
+});
+
+test('the player shows the time as minutes and seconds', () => {
+  const script = read('src/sidepanel/sidepanel.js');
+  assert.match(script, /function mmss\(seconds\)/);
+  assert.match(script, /songNow\.textContent = mmss\(/);
+  assert.match(script, /songTotal\.textContent = mmss\(/);
+});
+
+test('a lyric line carries the song to the moment it starts', () => {
+  const script = read('src/sidepanel/sidepanel.js');
+  assert.match(script, /ln-seek/);
+  assert.match(script, /seekSong\(at\)/);
+  assert.match(script, /lyricTimes/);
+});
+
+test('the panel can choose which model the engine uses', () => {
+  const panel = read('src/sidepanel/sidepanel.html');
+  assert.match(panel, /id="quality"/);
+  for (const level of ['auto', 'best', 'fast']) {
+    assert.match(panel, new RegExp(`value="${level}"`), level);
+  }
+  const script = read('src/sidepanel/sidepanel.js');
+  assert.match(script, /form\.append\('quality', qualitySel\.value\)/);
+});
+
 test('the pages load nothing from the web and only link to it', () => {
   for (const page of ['src/sidepanel/sidepanel.html', 'src/options/options.html']) {
     const code = read(page);
