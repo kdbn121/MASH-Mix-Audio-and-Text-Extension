@@ -1,6 +1,6 @@
 {
   "name": "mash-mix-audio-and-text-extension",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "description": "MASH-Mix-Audio-and-Text as a Chrome extension: measure any song in the browser, find its key and its tempo, and write the lyrics with the local engine. The extension itself is plain MV3 JavaScript with no build step; this file only exists for the node test and audit tooling.",
