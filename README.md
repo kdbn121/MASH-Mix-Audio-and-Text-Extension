@@ -98,7 +98,8 @@ it.
 
 **2. Get the engine.** From the
 [MASH-Mix-Audio-and-Text repository](https://github.com/kdbn121/MASH-Mix-Audio-and-Text),
-clone it or download the archive.
+clone it, or take the source archive from the
+[v0.1.5 release](https://github.com/kdbn121/MASH-Mix-Audio-and-Text/releases/tag/v0.1.5).
 
 **3. Install it.**
 
