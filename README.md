@@ -15,6 +15,8 @@ your own machine.
 
 ![The side panel with the lyrics of the song and the engine found](screenshots/panel-lyrics.png)
 
+![The side panel showing the steps for a new computer when the engine is not running](screenshots/panel-setup-guide.png)
+
 ## Install
 
 The extension is plain Manifest V3 and it has no build step.
