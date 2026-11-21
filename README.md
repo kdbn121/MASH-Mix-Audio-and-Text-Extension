@@ -13,6 +13,8 @@ your own machine.
 
 ![The side panel with the measurements of a song](screenshots/panel-measurements.png)
 
+![The side panel with the lyrics of the song and the engine found](screenshots/panel-lyrics.png)
+
 ## Install
 
 The extension is plain Manifest V3 and it has no build step.
@@ -53,6 +55,21 @@ With the engine running, the panel also writes the lyrics of the song, with
 the timestamps, and offers the subtitle files to download. It can also speak
 the lyrics.
 
+### The engine line
+
+The dot under **2. Lyrics** says whether the engine was found.
+
+| The dot | What it means |
+|---|---|
+| Green | The engine answered. The version and the address it answered on are shown, and the lyrics button is ready |
+| Amber | The engine is not running. The measurements still work, only the lyrics and the voice need it |
+
+**Check again** looks for the engine without reloading the panel, which is
+what you want after starting the engine in a terminal. When the engine
+answers on another port, that address is saved for next time. If the engine
+cannot be found, the panel shows the steps for a new computer, and the
+settings page has the same guide with a button that tests the engine.
+
 ## The engine
 
 The lyrics need a little help: a speech model does not fit in a browser
@@ -60,13 +77,51 @@ extension. The engine is the Python package of the same project, and it runs
 on your machine.
 
 ```bash
-pip install 'mash-mix-audio-and-text[server]'
 mash-mix serve --host 127.0.0.1 --port 8000
 ```
 
-The panel finds the engine at `http://127.0.0.1:8000` by default. Change the
-address in the settings of the extension if you run it on another port. The
-measurements work without the engine.
+The panel finds the engine at `http://127.0.0.1:8000` by default. It also
+looks on the ports 8000, 8001, 8080 and 8123, so an engine that runs on
+another port is usually found without changing anything. The address can be
+set by hand in the settings of the extension. The measurements work without
+the engine.
+
+## On a new computer
+
+The extension measures a file on its own. The engine is only needed for the
+lyrics and the voice, and it needs Python.
+
+**1. Install Python.** Python 3.9 or newer from
+[python.org/downloads](https://www.python.org/downloads/). On Windows, tick
+**Add Python to PATH** in the installer, otherwise the terminal will not find
+it.
+
+**2. Get the engine.** From the
+[MASH-Mix-Audio-and-Text repository](https://github.com/kdbn121/MASH-Mix-Audio-and-Text),
+clone it or download the archive.
+
+**3. Install it.**
+
+```bash
+pip install "mash-mix-audio-and-text[server] @ git+https://github.com/kdbn121/MASH-Mix-Audio-and-Text.git"
+```
+
+**4. Start it and leave it running.**
+
+```bash
+mash-mix serve --host 127.0.0.1 --port 8000
+```
+
+**5. Load the extension.** Unzip the archive of this repository, open
+`chrome://extensions`, turn on **Developer mode**, press **Load unpacked** and
+pick the folder that holds `manifest.json`.
+
+**6. Check it.** Open the settings of the extension and press **Test the
+engine**. It answers with the version when everything is in place. The panel
+shows a green dot when the engine is found.
+
+The panel shows the same steps if it cannot find an engine, and the
+**Check again** button looks for it again once it is running.
 
 ## How the numbers are worked out
 

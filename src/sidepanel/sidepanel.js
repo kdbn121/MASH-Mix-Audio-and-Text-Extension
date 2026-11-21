@@ -13,6 +13,19 @@
 
   var DEFAULT_ENGINE = 'http://127.0.0.1:8000';
 
+  // The ports an engine is likely to sit on. The panel looks at the saved
+  // address first and then at these, so an engine that was started on
+  // another port is still found.
+  var FALLBACK_ENGINES = [
+    'http://127.0.0.1:8000',
+    'http://127.0.0.1:8001',
+    'http://127.0.0.1:8080',
+    'http://127.0.0.1:8123',
+    'http://localhost:8000'
+  ];
+
+  var PROBE_TIMEOUT_MS = 1200;
+
   var drop = document.getElementById('drop');
   var input = document.getElementById('file');
   var chosen = document.getElementById('chosen');
@@ -30,6 +43,8 @@
   var engineDot = document.getElementById('engineDot');
   var engineText = document.getElementById('engineText');
   var engineHint = document.getElementById('engineHint');
+  var engineRetry = document.getElementById('engineRetry');
+  var engineSetup = document.getElementById('engineSetup');
   var langSel = document.getElementById('lang');
   var scriptSel = document.getElementById('script');
   var lyricsButton = document.getElementById('lyrics');
@@ -43,8 +58,18 @@
 
   var picked = null;
   var engineUrl = DEFAULT_ENGINE;
+  var savedEngine = DEFAULT_ENGINE;
+  var engineReady = false;
   var lyricText = '';
   var audioUrl = null;
+
+  /**
+   * The lyrics button needs two things: a file and a running engine. Both
+   * of them can arrive at any time, so the button is set from one place.
+   */
+  function updateLyricsButton() {
+    lyricsButton.disabled = !(picked && engineReady);
+  }
 
   // ---------------------------------------------------------------------------
   // the settings
@@ -61,7 +86,6 @@
       });
     });
   }
-
   // ---------------------------------------------------------------------------
   // small helpers
   // ---------------------------------------------------------------------------
@@ -147,6 +171,7 @@
     dlEl.hidden = true;
     speechEl.hidden = true;
     lyricText = '';
+    updateLyricsButton();
     measure(file);
   }
 
@@ -158,6 +183,7 @@
     linesEl.hidden = true;
     dlEl.hidden = true;
     speechEl.hidden = true;
+    updateLyricsButton();
   }
 
   async function measure(file) {
@@ -222,23 +248,93 @@
   // the local engine
   // ---------------------------------------------------------------------------
 
+  /**
+   * Ask one address whether an engine is there.
+   *
+   * The request is given a short time to answer. A port with nothing on it
+   * refuses at once, so the panel does not wait long when it looks in the
+   * wrong place.
+   */
+  async function probe(url) {
+    var controller = new AbortController();
+    var timer = setTimeout(function () { controller.abort(); }, PROBE_TIMEOUT_MS);
+    try {
+      var response = await fetch(url + '/api/health', {
+        cache: 'no-store',
+        signal: controller.signal
+      });
+      if (!response.ok) throw new Error('status ' + response.status);
+      return await response.json();
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  /**
+   * Find the engine. The saved address is asked first, then the ports an
+   * engine is likely to sit on. An engine that was started on another port
+   * is found this way and the panel remembers it.
+   */
+  async function findEngine() {
+    var candidates = [];
+    var seen = {};
+    var add = function (url) {
+      var clean = String(url || '').trim().replace(/\/+$/, '');
+      if (!clean || seen[clean]) return;
+      seen[clean] = true;
+      candidates.push(clean);
+    };
+    add(engineUrl);
+    add(savedEngine);
+    for (var i = 0; i < FALLBACK_ENGINES.length; i++) add(FALLBACK_ENGINES[i]);
+    for (var c = 0; c < candidates.length; c++) {
+      try {
+        var info = await probe(candidates[c]);
+        return { url: candidates[c], info: info };
+      } catch (err) {
+        // this address has no engine, the next one is tried
+      }
+    }
+    return null;
+  }
+
   async function checkEngine() {
     engineDot.className = 'dot';
     engineText.textContent = 'Looking for the local engine';
     engineHint.textContent = '';
+    engineSetup.hidden = true;
+    engineRetry.disabled = true;
     try {
-      var response = await fetch(engineUrl + '/api/health', { cache: 'no-store' });
-      if (!response.ok) throw new Error('status ' + response.status);
-      var info = await response.json();
+      var found = await findEngine();
+      if (!found) throw new Error('no engine answered');
+      engineUrl = found.url;
       engineDot.className = 'dot on';
-      engineText.textContent = 'Local engine ' + (info.version || '') + ' at ' + engineUrl;
-      lyricsButton.disabled = !picked;
+      engineText.textContent = 'Local engine ' + (found.info.version || '') + ' at ' + engineUrl;
+      engineSetup.hidden = true;
+      engineReady = true;
+      updateLyricsButton();
+      if (found.url !== savedEngine) {
+        // the engine answered on another address, so that one is kept
+        savedEngine = found.url;
+        if (globalThis.chrome && chrome.storage) {
+          chrome.storage.local.set({ engine: found.url });
+        }
+        engineHint.textContent = 'The engine answered on ' + found.url +
+          ', so that address is saved. The measurements work without it.';
+        engineHint.className = 'hint';
+      }
     } catch (err) {
       engineDot.className = 'dot off';
-      engineText.textContent = 'No local engine at ' + engineUrl;
-      engineHint.innerHTML = 'Start it with <code>mash-mix serve --host 127.0.0.1 --port 8000</code>. ' +
-        'The measurements work without it.';
-      lyricsButton.disabled = true;
+      engineText.textContent = 'The engine is not running';
+      engineHint.innerHTML = 'Start it with <code>mash-mix serve --host 127.0.0.1 --port 8000</code>, ' +
+        'then press <b>Check again</b>. The measurements of a file work without the engine, ' +
+        'only the lyrics and the voice need it.';
+      engineHint.className = 'hint';
+      engineSetup.hidden = false;
+      engineReady = false;
+      updateLyricsButton();
+    } finally {
+      engineRetry.disabled = false;
     }
   }
 
@@ -268,7 +364,7 @@
       statusEl.textContent = String(err.message || err);
       statusEl.className = 'status err';
     } finally {
-      lyricsButton.disabled = !picked;
+      updateLyricsButton();
     }
   }
 
@@ -361,6 +457,9 @@
   fcClear.addEventListener('click', clearFile);
   lyricsButton.addEventListener('click', getLyrics);
   speakButton.addEventListener('click', speakLyrics);
+  engineRetry.addEventListener('click', function () {
+    checkEngine();
+  });
   optionsLink.addEventListener('click', function (e) {
     e.preventDefault();
     if (globalThis.chrome && chrome.runtime && chrome.runtime.openOptionsPage) {
@@ -370,6 +469,7 @@
 
   loadSettings().then(function (settings) {
     engineUrl = String(settings.engine || DEFAULT_ENGINE).replace(/\/+$/, '');
+    savedEngine = engineUrl;
     checkEngine();
   });
 })();

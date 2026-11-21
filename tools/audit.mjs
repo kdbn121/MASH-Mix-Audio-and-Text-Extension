@@ -110,10 +110,29 @@ for (const file of scripts) {
   check(!/[\u2013\u2014]/.test(code), `${name} has no em dash and no en dash`);
 }
 
-for (const file of [...pages, ...styles]) {
+// The pages. A link that the reader has to click is not remote code, so the
+// links of the setup guide are allowed, and the address of the engine in the
+// guide may be written out as text. Everything that loads on its own is not:
+// no remote script, no remote style, no remote picture, no remote call.
+for (const file of pages) {
   const name = rel(file);
   const code = readFileSync(file, 'utf8');
   check(!/<script[^>]+src="https?:/i.test(code), `${name} loads no remote script`);
+  check(!/<link[^>]+href="https?:/i.test(code), `${name} loads no remote style`);
+  check(!/url\(\s*['"]?https?:/i.test(code), `${name} loads no remote file`);
+  check(!/fetch\s*\(\s*['"`]https?:/i.test(code), `${name} calls no remote host`);
+  const withoutAnchors = code.replace(/<a\b[^>]*>/gi, '');
+  check(
+    !/\b(?:src|href|action|data|poster)\s*=\s*['"`]https?:/i.test(withoutAnchors),
+    `${name} loads nothing from the web`
+  );
+  check(!/[\u2013\u2014]/.test(code), `${name} has no em dash and no en dash`);
+}
+
+for (const file of styles) {
+  const name = rel(file);
+  const code = readFileSync(file, 'utf8');
+  check(!/url\(\s*['"]?https?:/i.test(code), `${name} loads no remote file`);
   check(!/https?:\/\/(?!127\.0\.0\.1|localhost)/.test(code), `${name} names no host but the local one`);
   check(!/[\u2013\u2014]/.test(code), `${name} has no em dash and no en dash`);
 }

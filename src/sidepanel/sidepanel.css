@@ -138,11 +138,62 @@ h1 { font-size: 18px; margin: 0; letter-spacing: -0.2px; }
 
 /* the local engine */
 .engine { display: flex; align-items: center; gap: 8px; font-size: 12.5px; }
+#engineText { flex: 1 1 auto; min-width: 0; overflow-wrap: break-word; }
 .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); flex: 0 0 auto; }
 .dot.on { background: var(--ok); }
 .dot.off { background: var(--warn); }
 .hint { font-size: 11.5px; color: var(--muted); margin: 8px 0 12px; }
 .hint code { background: var(--panel-2); padding: 1px 5px; border-radius: 4px; }
+.hint b { color: var(--text); font-weight: 600; }
+
+/* the button that looks for the engine again */
+.retry {
+  margin-left: auto;
+  width: auto;
+  flex: 0 0 auto;
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 3px 9px;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.retry:hover { border-color: var(--accent); color: var(--accent); }
+.retry:disabled { opacity: .5; cursor: not-allowed; }
+
+/* what a new user has to install on another computer */
+.setup {
+  margin: 0 0 12px;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel-2);
+}
+.setup[hidden] { display: none; }
+.setup-title {
+  color: var(--muted);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.setup-list { margin: 0; padding-left: 18px; font-size: 11.5px; line-height: 1.6; }
+.setup-list li { margin-bottom: 5px; }
+.setup-list li:last-child { margin-bottom: 0; }
+.setup-list a { color: var(--accent-2); }
+.setup-list code {
+  background: var(--bg);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 11px;
+  word-break: break-all;
+}
+.setup-foot { margin: 9px 0 0; font-size: 11px; color: var(--muted); }
 
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 label.row { display: flex; flex-direction: column; gap: 4px; font-size: 12px; }

@@ -90,6 +90,55 @@ test('the panel shows the measurements and the own pitch and speed', () => {
   }
 });
 
+test('the panel can look for the engine again without being reloaded', () => {
+  const panel = read('src/sidepanel/sidepanel.html');
+  assert.match(panel, /id="engineRetry"/);
+  assert.match(panel, /Check again/);
+  const script = read('src/sidepanel/sidepanel.js');
+  assert.match(script, /engineRetry\.addEventListener/);
+  assert.match(script, /checkEngine\(\)/);
+});
+
+test('the panel looks for the engine on more than one port', () => {
+  const script = read('src/sidepanel/sidepanel.js');
+  assert.match(script, /FALLBACK_ENGINES/);
+  for (const port of [8000, 8001, 8080, 8123]) {
+    assert.match(script, new RegExp(`127\\.0\\.0\\.1:${port}`), `port ${port}`);
+  }
+});
+
+test('the panel tells a new user what to install on another computer', () => {
+  const panel = read('src/sidepanel/sidepanel.html');
+  assert.match(panel, /id="engineSetup"/);
+  assert.match(panel, /python\.org\/downloads/);
+  assert.match(panel, /github\.com\/kdbn121\/MASH-Mix-Audio-and-Text-Extension/);
+  assert.match(panel, /mash-mix serve --host 127\.0\.0\.1 --port 8000/);
+});
+
+test('the settings page carries the same guide and can test the engine', () => {
+  const page = read('src/options/options.html');
+  assert.match(page, /id="test"/);
+  assert.match(page, /Test the engine/);
+  assert.match(page, /python\.org\/downloads/);
+  assert.match(page, /github\.com\/kdbn121\/MASH-Mix-Audio-and-Text/);
+  const script = read('src/options/options.js');
+  assert.match(script, /api\/health/);
+  assert.match(script, /test\.addEventListener/);
+});
+
+test('the pages load nothing from the web and only link to it', () => {
+  for (const page of ['src/sidepanel/sidepanel.html', 'src/options/options.html']) {
+    const code = read(page);
+    assert.doesNotMatch(code, /<script[^>]+src="https?:/i, page);
+    assert.doesNotMatch(code, /<link[^>]+href="https?:/i, page);
+    assert.doesNotMatch(code, /<img[^>]+src="https?:/i, page);
+    assert.doesNotMatch(code, /fetch\s*\(\s*['"`]https?:/i, page);
+    // every address outside this machine has to sit inside an anchor
+    const withoutAnchors = code.replace(/<a\b[^>]*>/gi, '');
+    assert.doesNotMatch(withoutAnchors, /\b(?:src|href|action|data|poster)\s*=\s*['"`]https?:/i, page);
+  }
+});
+
 test('the source has no remote code and no analytics', () => {
   const files = walk(join(ROOT, 'src')).filter((f) => f.endsWith('.js'));
   assert.ok(files.length >= 4);

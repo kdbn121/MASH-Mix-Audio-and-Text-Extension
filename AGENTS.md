@@ -32,6 +32,17 @@ exists for the node test and audit tooling.
 6. **The extension is honest about what it cannot do.** It has no speech model,
    so the panel says the lyrics need the engine, and it never pretends to have
    done the transcription.
+7. **The panel looks for the engine on more than one port.** The saved address
+   is asked first, then 8000, 8001, 8080 and 8123. The one that answers is
+   saved. A reader must never have to hunt for the engine that is already
+   running.
+8. **The guide may link out, but nothing loads from the web.** The links in
+   the panel and in the settings page are anchors the reader has to click.
+   No script, no style, no picture and no call comes from the web, and the
+   audit holds that line.
+9. **The engine needs CORS for the local origins.** The browser holds the
+   extension to its own rules for a call that comes from another origin, so
+   the engine answers with the header for the local origins only.
 
 ## The analysis rules that were bugs once
 
