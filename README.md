@@ -8,7 +8,7 @@ local engine running it writes the lyrics as well.
 
 **Nothing you attach leaves your machine.** The measurement happens in the
 browser, on your machine. The only thing that is ever sent anywhere is the file
-itself, and only when you press **Get the lyrics**, and only to the engine on
+itself, and only when you press **Get the Lyrics / Text**, and only to the engine on
 your own machine.
 
 When you paste a link, the address goes to the engine on your own machine and
@@ -100,11 +100,13 @@ Every number is computed in the browser from the decoded audio.
 
 With the engine running, the panel also writes the lyrics of the song, with
 the timestamps, and offers the subtitle files to download. It can also speak
-the lyrics.
+the lyrics. The button that starts the work is **Get the Lyrics / Text**,
+because what it brings back is the words of the song, not only the lyrics
+of a song that has them.
 
 ### The player
 
-Under the **Get the lyrics** button there is a player for the song itself.
+Under the **Get the Lyrics / Text** button there is a player for the song itself.
 
 | What you see | What it does |
 |---|---|
@@ -141,8 +143,45 @@ The **Language** choice is **Auto, any language** by default.
 | bn-BD, bn-IN, bn | Bangla, with the region worked out or forced |
 | Any other code | The language is forced. A language other than Bangla keeps the script the recogniser used, because there is nothing to convert it to |
 
-The **Script** choice only applies to Bangla. It chooses between the native
-Bangla script and romanised Bangla.
+The **Script** choice follows the **Language** choice. It is never a fixed
+list, and it never offers a script that the engine cannot write.
+
+| When the language is | The script box holds | And it starts on |
+|---|---|---|
+| Auto, any language | Every script the engine can write, until the language is found | Bangla, the first of them |
+| Bangla, any region | Bangla and Banglish | The native Bangla script |
+| Any other language | The script that language is written in, and nothing else | That script |
+
+A language the engine cannot write in a second script is offered in its own
+script only. The engine can write Bangla in Bangla or in romanised Bangla,
+but it cannot turn Devanagari or Tamil into Latin letters, so those languages
+are offered in the script they are written in. An option that does nothing is
+worse than no option at all.
+
+When the language is found, the script box narrows to the scripts of that
+language, so the box shows what the engine can actually produce for the words
+it just wrote. A script chosen by hand is kept when it is still one of them.
+
+**A choice made by hand is remembered for that language.** Pick Banglish for
+Bangla, go to another language and come back, and Banglish is still there. A
+language you have never touched keeps its own script.
+
+### The outcome of the run
+
+At the foot of the panel there is a card with the result of the run.
+
+| What you see | What it means |
+|---|---|
+| The title | The name of the song |
+| The line under it | The language, the script the words were written in, and the number of lines |
+| The text | The lyrics or the text exactly as it was written |
+| **Copy to clipboard** | Puts the text on the clipboard with one click |
+| **Download .txt** | Saves the text as a readable file, named after the song |
+
+The clipboard is asked for first and the old way of copying is kept as a
+second road, so the copy works even where the clipboard of the browser is
+not allowed. Neither action needs a permission the extension did not already
+have, and the file is written on your own machine.
 
 ### The engine line
 

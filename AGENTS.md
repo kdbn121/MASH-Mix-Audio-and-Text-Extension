@@ -65,6 +65,19 @@ exists for the node test and audit tooling.
     with a model when it does not. The panel shows which of the two happened,
     because the words of a page and the words of a model are not the same
     claim.
+15. **The script box follows the language box.** It is built from the table
+    of the scripts the engine can write, and it is rebuilt whenever the
+    language changes or the engine reports the language it found. A script
+    that is not valid for the language is never offered and never left
+    selected, and a language the user has never touched keeps its own script
+    while a language they have touched keeps the script they picked.
+16. **The panel only offers a script the engine can really write.** Bangla
+    has Bangla and Banglish. Every other language has the script it is
+    written in, because the engine cannot transliterate Devanagari, Tamil or
+    the rest into Latin. An option that does nothing is worse than no option.
+17. **The outcome is shown at the foot of the panel.** The final text, the
+    language, the script it was written in and the number of lines, with a
+    copy and a download that need no permission the extension did not have.
 
 ## The analysis rules that were bugs once
 

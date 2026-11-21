@@ -55,6 +55,7 @@
   var engineSetup = document.getElementById('engineSetup');
   var langSel = document.getElementById('lang');
   var scriptSel = document.getElementById('script');
+  var langHint = document.getElementById('langHint');
   var qualitySel = document.getElementById('quality');
   var lyricsButton = document.getElementById('lyrics');
   var statusEl = document.getElementById('status');
@@ -70,6 +71,13 @@
   var songNow = document.getElementById('songNow');
   var songTotal = document.getElementById('songTotal');
   var songAudio = document.getElementById('song');
+  var outcome = document.getElementById('outcome');
+  var outcomeTitle = document.getElementById('outcomeTitle');
+  var outcomeMeta = document.getElementById('outcomeMeta');
+  var outcomeText = document.getElementById('outcomeText');
+  var outcomeCopy = document.getElementById('outcomeCopy');
+  var outcomeDownload = document.getElementById('outcomeDownload');
+  var outcomeNote = document.getElementById('outcomeNote');
 
   var picked = null;
   var sourceUrl = '';
@@ -82,6 +90,179 @@
   var engineAudioUrl = '';
   var lyricTimes = [];
   var activeLine = -1;
+
+  // ---------------------------------------------------------------------------
+  // the script of every language
+  // ---------------------------------------------------------------------------
+
+  /**
+   * The writing system of every language the panel offers, and the other
+   * script the engine can write it in.
+   *
+   * The id is the choice in the panel and the engine value is what the engine
+   * understands: `bangla` keeps the native script and repairs the Bangla in
+   * it, and `banglish` writes Bangla in Latin letters. A language the engine
+   * cannot write in another script is offered in its own script only, because
+   * an option that does nothing is worse than no option at all.
+   */
+  var LANGUAGE_SCRIPTS = {
+    bn: [
+      { id: 'bn-native', engine: 'bangla', label: 'Bangla (Bengali script)' },
+      { id: 'bn-latin', engine: 'banglish', label: 'Banglish (Latin letters)' }
+    ],
+    en: [{ id: 'en-native', engine: 'bangla', label: 'English (Latin script)' }],
+    hi: [{ id: 'hi-native', engine: 'bangla', label: 'Hindi (Devanagari script)' }],
+    ur: [{ id: 'ur-native', engine: 'bangla', label: 'Urdu (Arabic script)' }],
+    ar: [{ id: 'ar-native', engine: 'bangla', label: 'Arabic (Arabic script)' }],
+    fa: [{ id: 'fa-native', engine: 'bangla', label: 'Persian (Arabic script)' }],
+    es: [{ id: 'es-native', engine: 'bangla', label: 'Spanish (Latin script)' }],
+    fr: [{ id: 'fr-native', engine: 'bangla', label: 'French (Latin script)' }],
+    de: [{ id: 'de-native', engine: 'bangla', label: 'German (Latin script)' }],
+    it: [{ id: 'it-native', engine: 'bangla', label: 'Italian (Latin script)' }],
+    pt: [{ id: 'pt-native', engine: 'bangla', label: 'Portuguese (Latin script)' }],
+    nl: [{ id: 'nl-native', engine: 'bangla', label: 'Dutch (Latin script)' }],
+    id: [{ id: 'id-native', engine: 'bangla', label: 'Indonesian (Latin script)' }],
+    ru: [{ id: 'ru-native', engine: 'bangla', label: 'Russian (Cyrillic script)' }],
+    uk: [{ id: 'uk-native', engine: 'bangla', label: 'Ukrainian (Cyrillic script)' }],
+    el: [{ id: 'el-native', engine: 'bangla', label: 'Greek (Greek script)' }],
+    he: [{ id: 'he-native', engine: 'bangla', label: 'Hebrew (Hebrew script)' }],
+    th: [{ id: 'th-native', engine: 'bangla', label: 'Thai (Thai script)' }],
+    vi: [{ id: 'vi-native', engine: 'bangla', label: 'Vietnamese (Latin script)' }],
+    tr: [{ id: 'tr-native', engine: 'bangla', label: 'Turkish (Latin script)' }],
+    sw: [{ id: 'sw-native', engine: 'bangla', label: 'Swahili (Latin script)' }],
+    zh: [{ id: 'zh-native', engine: 'bangla', label: 'Chinese (Han script)' }],
+    ja: [{ id: 'ja-native', engine: 'bangla', label: 'Japanese (Kana script)' }],
+    ko: [{ id: 'ko-native', engine: 'bangla', label: 'Korean (Hangul script)' }],
+    ta: [{ id: 'ta-native', engine: 'bangla', label: 'Tamil (Tamil script)' }],
+    te: [{ id: 'te-native', engine: 'bangla', label: 'Telugu (Telugu script)' }],
+    kn: [{ id: 'kn-native', engine: 'bangla', label: 'Kannada (Kannada script)' }],
+    ml: [{ id: 'ml-native', engine: 'bangla', label: 'Malayalam (Malayalam script)' }],
+    mr: [{ id: 'mr-native', engine: 'bangla', label: 'Marathi (Devanagari script)' }],
+    gu: [{ id: 'gu-native', engine: 'bangla', label: 'Gujarati (Gujarati script)' }],
+    pa: [{ id: 'pa-native', engine: 'bangla', label: 'Punjabi (Gurmukhi script)' }],
+    cs: [{ id: 'cs-native', engine: 'bangla', label: 'Czech (Latin script)' }],
+    pl: [{ id: 'pl-native', engine: 'bangla', label: 'Polish (Latin script)' }],
+    hu: [{ id: 'hu-native', engine: 'bangla', label: 'Hungarian (Latin script)' }],
+    ka: [{ id: 'ka-native', engine: 'bangla', label: 'Georgian (Georgian script)' }],
+    lv: [{ id: 'lv-native', engine: 'bangla', label: 'Latvian (Latin script)' }]
+  };
+
+  // The languages in the order the panel offers them. The order of the list
+  // of scripts follows it, so the choice reads the same way as the language
+  // box above it.
+  var LANGUAGE_ORDER = [
+    'bn', 'en', 'hi', 'ur', 'ar', 'fa', 'es', 'fr', 'de', 'it', 'pt', 'nl', 'id',
+    'ru', 'uk', 'el', 'he', 'th', 'vi', 'tr', 'sw', 'zh', 'ja', 'ko', 'ta', 'te',
+    'kn', 'ml', 'mr', 'gu', 'pa', 'cs', 'pl', 'hu', 'ka', 'lv'
+  ];
+
+  // The table is put on the namespace, the same way the analysis is, so the
+  // test suite can hold the panel to the rule the table says. The panel reads
+  // its own copy and never goes looking for this one.
+  var root = (globalThis.MASH_MIX = globalThis.MASH_MIX || {});
+  root.panel = {
+    languageScripts: LANGUAGE_SCRIPTS,
+    languageOrder: LANGUAGE_ORDER,
+    scriptsFor: scriptsFor,
+    nativeScript: nativeScript
+  };
+
+  /**
+   * The script the user chose for each language, and the script that is
+   * chosen now.
+   *
+   * A choice is remembered for the language it was made in, so a language the
+   * user has never touched keeps its native script and a language they have
+   * touched keeps the script they picked.
+   */
+  var scriptChoice = {};
+  var currentScript = null;
+
+  /** The language code of a choice of the language box. */
+  function languageCode(value) {
+    return String(value || 'auto').split('-')[0].toLowerCase();
+  }
+
+  /**
+   * Every script the engine can write, for a language that is not known yet.
+   */
+  function everyScript() {
+    var out = [];
+    for (var i = 0; i < LANGUAGE_ORDER.length; i++) {
+      out.push(LANGUAGE_SCRIPTS[LANGUAGE_ORDER[i]][0]);
+    }
+    // Banglish is the one other script the engine can write.
+    out.push(LANGUAGE_SCRIPTS.bn[1]);
+    return out;
+  }
+
+  /**
+   * The scripts that are valid for a language.
+   *
+   * A regional tag such as bn-BD is the language it belongs to, so it gets
+   * the scripts of that language.
+   */
+  function scriptsFor(language) {
+    var code = languageCode(language);
+    if (code === 'auto' || !LANGUAGE_SCRIPTS[code]) return everyScript();
+    return LANGUAGE_SCRIPTS[code].slice();
+  }
+
+  /** The script of a language that is its own, which is the first of its list. */
+  function nativeScript(language) {
+    return scriptsFor(language)[0];
+  }
+
+  function hasScript(list, id) {
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].id === id) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Put the scripts of a language into the box and choose one of them.
+   *
+   * The choice the user made for that language is kept when it is still one
+   * of the scripts on offer. Otherwise the native script of the language is
+   * chosen, because a script that is not valid for the language is never
+   * offered and never left selected.
+   */
+  function applyScripts(language, keep) {
+    var list = scriptsFor(language);
+    var wanted = keep && currentScript ? currentScript.id : scriptChoice[language];
+    if (!wanted || !hasScript(list, wanted)) wanted = list[0].id;
+
+    scriptSel.innerHTML = '';
+    var chosen = null;
+    for (var i = 0; i < list.length; i++) {
+      var opt = document.createElement('option');
+      opt.value = list[i].id;
+      opt.textContent = list[i].label;
+      scriptSel.appendChild(opt);
+      if (list[i].id === wanted) chosen = list[i];
+    }
+    if (!chosen) chosen = list[0];
+    scriptSel.value = chosen.id;
+    currentScript = chosen;
+    updateLangHint();
+    return chosen;
+  }
+
+  /**
+   * Say what the script box is for, so the rule behind it is not a mystery.
+   */
+  function updateLangHint() {
+    if (languageCode(langSel.value) === 'auto') {
+      langHint.textContent = 'Auto lets the engine find the language of the audio. ' +
+        'The script box holds every script the engine can write, and it narrows ' +
+        'to the language that was found.';
+      return;
+    }
+    langHint.textContent = 'The script follows the language. It starts on ' +
+      nativeScript(langSel.value).label + ', the script that language is written ' +
+      'in, and you can pick another one if you want it written differently.';
+  }
 
   /**
    * The lyrics button needs two things: a file and a running engine. Both
@@ -205,6 +386,9 @@
     linesEl.hidden = true;
     dlEl.hidden = true;
     speechEl.hidden = true;
+    outcome.hidden = true;
+    outcomeText.textContent = '';
+    outcomeNote.textContent = '';
     lyricText = '';
     lyricTimes = [];
     activeLine = -1;
@@ -221,6 +405,9 @@
     linesEl.hidden = true;
     dlEl.hidden = true;
     speechEl.hidden = true;
+    outcome.hidden = true;
+    outcomeText.textContent = '';
+    outcomeNote.textContent = '';
     lyricText = '';
     lyricTimes = [];
     activeLine = -1;
@@ -659,7 +846,7 @@
     var form = new FormData();
     form.append('file', picked, picked.name);
     form.append('language', langSel.value);
-    form.append('script', scriptSel.value);
+    form.append('script', currentScript ? currentScript.engine : 'bangla');
     form.append('quality', qualitySel.value);
     await runLyrics('/api/lyrics', form, function (state) {
       fcBadge.textContent = state;
@@ -684,7 +871,7 @@
     var form = new FormData();
     form.append('url', link);
     form.append('language', langSel.value);
-    form.append('script', scriptSel.value);
+    form.append('script', currentScript ? currentScript.engine : 'bangla');
     form.append('quality', qualitySel.value);
     await runLyrics('/api/lyrics/url', form, function (state) {
       urlBadge.textContent = state;
@@ -696,6 +883,12 @@
     lyricText = data.text || '';
     linesEl.innerHTML = '';
     linesEl.hidden = false;
+    if (languageCode(langSel.value) === 'auto' && data.language) {
+      // The language is known now, so the script box narrows to the scripts
+      // of that language. A script the user chose by hand is kept when it is
+      // still one of them.
+      applyScripts(data.language, true);
+    }
     // A link brings facts of its own, so they are shown in the panel.
     if (data.source && data.source.url) {
       showSource(data.source, data.meta);
@@ -752,6 +945,107 @@
       dlEl.appendChild(a);
     }
     speechEl.hidden = !lyricText;
+    renderOutcome(data);
+  }
+
+  /**
+   * The outcome of the run, at the foot of the panel.
+   *
+   * It holds the text as it was written, the language it is in and the script
+   * it came back in, so the reader can see what they are about to copy or to
+   * save.
+   */
+  function renderOutcome(data) {
+    outcomeText.textContent = lyricText;
+    outcomeNote.textContent = '';
+
+    var title = (data && data.title) || 'Lyrics / Text';
+    outcomeTitle.textContent = title;
+
+    var meta = (data && data.meta) || {};
+    var bits = [];
+    if (data && data.language) bits.push(data.language);
+    if (meta.output_script) bits.push(meta.output_script);
+    if (data && data.lines && data.lines.length) {
+      bits.push(data.lines.length + (data.lines.length === 1 ? ' line' : ' lines'));
+    }
+    outcomeMeta.textContent = bits.join(' - ');
+    outcome.hidden = !lyricText;
+  }
+
+  /**
+   * Put the text on the clipboard.
+   *
+   * The clipboard of the browser is asked first. An extension page is not
+   * always allowed to use it, so the old way is kept as a second road: a
+   * hidden field is selected and copied, which a click allows and which
+   * needs no permission at all.
+   */
+  async function copyOutcome() {
+    var text = outcomeText.textContent;
+    if (!text) {
+      outcomeNote.textContent = 'There is nothing to copy yet.';
+      return;
+    }
+    var copied = false;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        copied = true;
+      }
+    } catch (err) {
+      copied = false;
+    }
+    if (!copied) {
+      var area = document.createElement('textarea');
+      area.value = text;
+      area.setAttribute('readonly', '');
+      area.style.position = 'fixed';
+      area.style.left = '-9999px';
+      document.body.appendChild(area);
+      area.select();
+      try {
+        copied = document.execCommand('copy');
+      } catch (err) {
+        copied = false;
+      }
+      document.body.removeChild(area);
+    }
+    outcomeNote.textContent = copied
+      ? 'The text is on the clipboard.'
+      : 'The clipboard was not available, so the text is still on the screen to copy by hand.';
+  }
+
+  /**
+   * Save the text as a file.
+   *
+   * The file is written on this machine, in the folder the browser keeps its
+   * downloads in. Nothing is sent anywhere.
+   */
+  function downloadOutcome() {
+    var text = outcomeText.textContent;
+    if (!text) {
+      outcomeNote.textContent = 'There is nothing to save yet.';
+      return;
+    }
+    var blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = outcomeFileName();
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
+    outcomeNote.textContent = 'Saved as ' + a.download + '.';
+  }
+
+  /** The name of the saved file, taken from the title of the song. */
+  function outcomeFileName() {
+    var title = outcomeTitle.textContent || 'lyrics';
+    var clean = title.replace(/[<>:"/\\|?*]/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!clean) clean = 'lyrics';
+    return clean.slice(0, 80) + '.txt';
   }
 
   async function speakLyrics() {
@@ -823,6 +1117,25 @@
     statusEl.className = 'status';
   });
   speakButton.addEventListener('click', speakLyrics);
+  langSel.addEventListener('change', function () {
+    // The script follows the language. The native script of the language
+    // that was chosen is the one that is selected, unless the user has
+    // already chosen another script for that language.
+    applyScripts(langSel.value, false);
+  });
+  scriptSel.addEventListener('change', function () {
+    // The choice is remembered for the language it was made in.
+    var list = scriptsFor(langSel.value);
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].id === scriptSel.value) {
+        currentScript = list[i];
+        scriptChoice[langSel.value] = list[i].id;
+        break;
+      }
+    }
+  });
+  outcomeCopy.addEventListener('click', copyOutcome);
+  outcomeDownload.addEventListener('click', downloadOutcome);
   engineRetry.addEventListener('click', function () {
     checkEngine();
   });
@@ -836,6 +1149,8 @@
   loadSettings().then(function (settings) {
     engineUrl = String(settings.engine || DEFAULT_ENGINE).replace(/\/+$/, '');
     savedEngine = engineUrl;
+    // The script box starts on the scripts of the language that is chosen.
+    applyScripts(langSel.value, false);
     checkEngine();
   });
 })();

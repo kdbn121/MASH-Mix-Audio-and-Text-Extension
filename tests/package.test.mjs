@@ -298,6 +298,30 @@ test('the panel says where the words came from', () => {
   assert.match(script, /row\('words', words\)/);
 });
 
+test('the script box is built by the panel and follows the language', () => {
+  const script = read('src/sidepanel/sidepanel.js');
+  assert.match(script, /function applyScripts\(language, keep\)/);
+  assert.match(script, /langSel\.addEventListener\('change'/);
+  // A script the user chose by hand is kept for the language it was made in.
+  assert.match(script, /scriptChoice\[langSel\.value\] = list\[i\]\.id/);
+  const panel = read('src/sidepanel/sidepanel.html');
+  // The page holds one script to start with. The rest are built by the panel.
+  assert.match(panel, /<option value="bn-native" selected>/);
+});
+
+test('the outcome of the run is at the foot of the panel', () => {
+  const panel = read('src/sidepanel/sidepanel.html');
+  assert.match(panel, /id="outcome"/);
+  assert.match(panel, /id="outcomeText"/);
+  assert.match(panel, /id="outcomeCopy"/);
+  assert.match(panel, /id="outcomeDownload"/);
+  const script = read('src/sidepanel/sidepanel.js');
+  assert.match(script, /function copyOutcome\(\)/);
+  assert.match(script, /function downloadOutcome\(\)/);
+  assert.match(script, /navigator\.clipboard/);
+  assert.match(script, /new Blob\(\[text\]/);
+});
+
 test('the language of the audio can be left to the engine', () => {
   const panel = read('src/sidepanel/sidepanel.html');
   assert.match(panel, /<option value="auto" selected>Auto, any language<\/option>/);

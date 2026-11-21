@@ -16,7 +16,7 @@ until you close it.
 
 ## What the extension sends
 
-Only if you press **Get the lyrics**, and only to the local engine you set in
+Only if you press **Get the Lyrics / Text**, and only to the local engine you set in
 the settings, which is a server on this machine:
 
 - the file you attached,

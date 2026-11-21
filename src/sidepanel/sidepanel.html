@@ -168,12 +168,11 @@
     <label class="row">
       <span>Script</span>
       <select id="script">
-        <option value="bangla" selected>Bangla</option>
-        <option value="banglish">Banglish</option>
+        <option value="bn-native" selected>Bangla (Bengali script)</option>
       </select>
     </label>
   </div>
-  <p class="hint" id="langHint">Auto lets the engine find the language of the audio. A language other than Bangla keeps the script the recogniser used.</p>
+  <p class="hint" id="langHint">The script follows the language. It starts on the native script of that language, and you can change it if you want another one.</p>
   <label class="row">
     <span>Model</span>
     <select id="quality">
@@ -182,7 +181,7 @@
       <option value="fast">Fast, the quick one</option>
     </select>
   </label>
-  <button id="lyrics" disabled>Get the lyrics</button>
+  <button id="lyrics" disabled>Get the Lyrics / Text</button>
   <div class="status" id="status" role="status" aria-live="polite"></div>
 
   <div class="songplay" id="songplay" hidden>
@@ -213,6 +212,19 @@
   <div class="speech" id="speech" hidden>
     <button type="button" class="ghost" id="speak">Speak the lyrics</button>
     <audio id="player" controls hidden></audio>
+  </div>
+
+  <div class="outcome" id="outcome" hidden>
+    <div class="oc-top">
+      <span class="oc-title" id="outcomeTitle">Lyrics / Text</span>
+      <span class="oc-meta" id="outcomeMeta"></span>
+    </div>
+    <pre class="oc-text" id="outcomeText"></pre>
+    <div class="oc-actions">
+      <button type="button" class="ghost" id="outcomeCopy">Copy to clipboard</button>
+      <button type="button" class="ghost" id="outcomeDownload">Download .txt</button>
+    </div>
+    <div class="oc-note" id="outcomeNote"></div>
   </div>
 </section>
 
