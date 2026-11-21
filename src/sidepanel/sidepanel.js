@@ -306,9 +306,17 @@
       line += ', ' + Math.round(meta.language_probability * 100) + '% sure';
     }
 
+    // Where the words came from. The subtitles the page carries are the truth
+    // about the words, and a model that read the audio is a reading of it.
+    var words = '';
+    var from = (meta && meta.lyrics_source) || '';
+    if (from === 'site subtitles') words = 'from the page subtitles';
+    else if (from === 'speech model') words = 'read by the model';
+
     urlGrid.innerHTML =
       row('language', line) +
       row('script', (meta && meta.output_script) || source.script || '') +
+      row('words', words) +
       row('site', source.extractor || '') +
       row('length', source.duration ? mmss(source.duration) : '');
     urlBadge.textContent = 'fetched';

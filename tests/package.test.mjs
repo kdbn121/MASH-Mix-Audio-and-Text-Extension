@@ -288,6 +288,16 @@ test('the panel shows a certainty only when the model worked the language out', 
   assert.match(script, /metaOrigin === 'model' && meta && meta\.language_probability/);
 });
 
+test('the panel says where the words came from', () => {
+  const script = read('src/sidepanel/sidepanel.js');
+  // The subtitles the page carries are the truth about the words. A model
+  // that read the audio is a reading of them, and the panel says which.
+  assert.match(script, /meta && meta\.lyrics_source/);
+  assert.match(script, /from the page subtitles/);
+  assert.match(script, /read by the model/);
+  assert.match(script, /row\('words', words\)/);
+});
+
 test('the language of the audio can be left to the engine', () => {
   const panel = read('src/sidepanel/sidepanel.html');
   assert.match(panel, /<option value="auto" selected>Auto, any language<\/option>/);

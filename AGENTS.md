@@ -60,6 +60,11 @@ exists for the node test and audit tooling.
 13. **A guess about the language is shown as a guess.** The panel says where
     the language came from: the page named it, the title was read, or the
     model found it.
+14. **The panel says where the words came from.** The engine writes the
+    subtitles the page carries when the page has them, and reads the audio
+    with a model when it does not. The panel shows which of the two happened,
+    because the words of a page and the words of a model are not the same
+    claim.
 
 ## The analysis rules that were bugs once
 

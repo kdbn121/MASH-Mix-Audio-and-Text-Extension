@@ -61,12 +61,20 @@ What comes back is shown in a card above the lyrics:
 | The line under it | Who put it there, how long it is and which site it came from |
 | The language | The language of the song and how it was worked out |
 | The script | The writing system the lyrics are in |
+| The words | Where the words came from: the page's own subtitles, or a model that read the audio |
 
 The language is worked out in three steps, and the panel says which one was
 used. A page that names its own language is believed. A page that says
 nothing is read from the script of its title, for example the Bengali letters
 of a Bengali title. When the page says nothing at all, the model is asked what
 it hears. A guess is always shown as a guess.
+
+**The words line is the honest one.** When the page carries its own
+subtitles, the engine uses them, because a page that publishes its subtitles
+has the right words and the right timings and nothing has to be recognised.
+The run is then a matter of seconds rather than minutes, and the lyrics are
+exact. When the page has no subtitles, the audio is read by a model and the
+panel says that instead.
 
 The lyrics of the fetched song are written exactly like the lyrics of an
 attached file, and the subtitle files are downloaded the same way. The audio
