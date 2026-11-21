@@ -285,6 +285,12 @@
     urlSub.textContent = facts.join(' - ');
 
     var origin = source.language_source || 'none';
+    var metaOrigin = (meta && meta.language_source) || 'none';
+    if (origin === 'none' && metaOrigin === 'model') {
+      // The page said nothing at all, so the model is the one that worked
+      // the language out.
+      origin = 'model';
+    }
     var said = {
       declared: 'the page named it',
       script: 'read from the title',
@@ -293,7 +299,10 @@
     };
     var language = (meta && meta.language_effective) || source.language || '';
     var line = language ? language + ', ' + (said[origin] || origin) : (said[origin] || origin);
-    if (meta && meta.language_probability) {
+    // The certainty is only shown when the model worked the language out on
+    // its own. A model that was told the language reports a certainty of one,
+    // and that number is not a measurement of anything.
+    if (metaOrigin === 'model' && meta && meta.language_probability) {
       line += ', ' + Math.round(meta.language_probability * 100) + '% sure';
     }
 

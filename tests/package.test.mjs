@@ -281,6 +281,13 @@ test('the panel shows what the engine found behind the link', () => {
   assert.match(script, /found by the model/);
 });
 
+test('the panel shows a certainty only when the model worked the language out', () => {
+  const script = read('src/sidepanel/sidepanel.js');
+  // A model that was told the language reports a certainty of one, and that
+  // number is not a measurement of anything.
+  assert.match(script, /metaOrigin === 'model' && meta && meta\.language_probability/);
+});
+
 test('the language of the audio can be left to the engine', () => {
   const panel = read('src/sidepanel/sidepanel.html');
   assert.match(panel, /<option value="auto" selected>Auto, any language<\/option>/);
