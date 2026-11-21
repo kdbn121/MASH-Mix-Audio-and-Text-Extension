@@ -77,6 +77,26 @@
     <div class="fc-grid" id="fcGrid"></div>
     <button type="button" class="fc-clear" id="fcClear">Remove this file</button>
   </div>
+
+  <div class="urlbox">
+    <label class="urllabel" for="url">Copy Paste any URL</label>
+    <input type="url" id="url" inputmode="url" autocomplete="off" spellcheck="false"
+      placeholder="Paste a link to a song, such as a YouTube or a Dailymotion address">
+    <button type="button" class="ghost" id="urlFetch" disabled>Fetch from the link</button>
+    <div class="urlnote">The engine on this machine does the fetching. The panel never talks to the site.</div>
+  </div>
+
+  <div class="filecard" id="urlcard" hidden>
+    <div class="fc-top">
+      <div class="fc-min">
+        <div class="fc-name" id="urlName"></div>
+        <div class="fc-sub" id="urlSub"></div>
+      </div>
+      <span class="badge" id="urlBadge">fetched</span>
+    </div>
+    <div class="fc-grid" id="urlGrid"></div>
+    <button type="button" class="fc-clear" id="urlClear">Remove this link</button>
+  </div>
 </section>
 
 <section class="card">
@@ -92,8 +112,8 @@
     <div class="setup-title">On a new computer</div>
     <ol class="setup-list">
       <li>Install Python 3.9 or newer from <a href="https://www.python.org/downloads/" target="_blank" rel="noreferrer noopener">python.org</a> and tick <b>Add Python to PATH</b>.</li>
-      <li>Get the engine from <a href="https://github.com/kdbn121/MASH-Mix-Audio-and-Text" target="_blank" rel="noreferrer noopener">the MASH-Mix repository</a> or from its <a href="https://github.com/kdbn121/MASH-Mix-Audio-and-Text/releases/tag/v0.1.5" target="_blank" rel="noreferrer noopener">release page</a>.</li>
-      <li>Open a terminal and run <code>pip install "mash-mix-audio-and-text[server] @ git+https://github.com/kdbn121/MASH-Mix-Audio-and-Text.git"</code>.</li>
+      <li>Get the engine from <a href="https://github.com/kdbn121/MASH-Mix-Audio-and-Text" target="_blank" rel="noreferrer noopener">the MASH-Mix repository</a> or from its <a href="https://github.com/kdbn121/MASH-Mix-Audio-and-Text/releases/tag/v0.3.0" target="_blank" rel="noreferrer noopener">release page</a>.</li>
+      <li>Open a terminal and run <code>pip install "mash-mix-audio-and-text[server,sources] @ git+https://github.com/kdbn121/MASH-Mix-Audio-and-Text.git"</code>. The <b>sources</b> extra is the fetcher for links.</li>
       <li>Start it with <code>mash-mix serve --host 127.0.0.1 --port 8000</code> and leave it running.</li>
       <li>Load this extension from <a href="https://github.com/kdbn121/MASH-Mix-Audio-and-Text-Extension" target="_blank" rel="noreferrer noopener">the extension repository</a>.</li>
     </ol>
@@ -104,10 +124,45 @@
     <label class="row">
       <span>Language</span>
       <select id="lang">
-        <option value="bn-BD" selected>bn-BD, Bangladeshi Bangla</option>
+        <option value="auto" selected>Auto, any language</option>
+        <option value="bn-BD">bn-BD, Bangladeshi Bangla</option>
         <option value="bn-IN">bn-IN, Indian Bengali</option>
         <option value="bn">bn, automatic region</option>
-        <option value="">Auto detect</option>
+        <option value="en">en, English</option>
+        <option value="hi">hi, Hindi</option>
+        <option value="ur">ur, Urdu</option>
+        <option value="ar">ar, Arabic</option>
+        <option value="fa">fa, Persian</option>
+        <option value="es">es, Spanish</option>
+        <option value="fr">fr, French</option>
+        <option value="de">de, German</option>
+        <option value="it">it, Italian</option>
+        <option value="pt">pt, Portuguese</option>
+        <option value="nl">nl, Dutch</option>
+        <option value="id">id, Indonesian</option>
+        <option value="ru">ru, Russian</option>
+        <option value="uk">uk, Ukrainian</option>
+        <option value="el">el, Greek</option>
+        <option value="he">he, Hebrew</option>
+        <option value="th">th, Thai</option>
+        <option value="vi">vi, Vietnamese</option>
+        <option value="tr">tr, Turkish</option>
+        <option value="sw">sw, Swahili</option>
+        <option value="zh">zh, Chinese</option>
+        <option value="ja">ja, Japanese</option>
+        <option value="ko">ko, Korean</option>
+        <option value="ta">ta, Tamil</option>
+        <option value="te">te, Telugu</option>
+        <option value="kn">kn, Kannada</option>
+        <option value="ml">ml, Malayalam</option>
+        <option value="mr">mr, Marathi</option>
+        <option value="gu">gu, Gujarati</option>
+        <option value="pa">pa, Punjabi</option>
+        <option value="cs">cs, Czech</option>
+        <option value="pl">pl, Polish</option>
+        <option value="hu">hu, Hungarian</option>
+        <option value="ka">ka, Georgian</option>
+        <option value="lv">lv, Latvian</option>
       </select>
     </label>
     <label class="row">
@@ -118,6 +173,7 @@
       </select>
     </label>
   </div>
+  <p class="hint" id="langHint">Auto lets the engine find the language of the audio. A language other than Bangla keeps the script the recogniser used.</p>
   <label class="row">
     <span>Model</span>
     <select id="quality">

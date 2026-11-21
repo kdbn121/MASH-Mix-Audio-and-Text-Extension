@@ -150,7 +150,11 @@ test('the player reads the file in the browser and sends it nowhere', () => {
   const script = read('src/sidepanel/sidepanel.js');
   assert.match(script, /URL\.createObjectURL\(file\)/);
   assert.match(script, /URL\.revokeObjectURL/);
-  assert.doesNotMatch(script, /songAudio\.src\s*=\s*engineUrl/);
+  // The engine is never asked to play a file the user attached. It is asked
+  // only for the audio it downloaded itself, and that address is on this
+  // machine too.
+  assert.match(script, /songAudio\.src = engineAudioUrl/);
+  assert.doesNotMatch(script, /songAudio\.src = engineUrl/);
 });
 
 test('the player plays and pauses on the button', () => {
@@ -243,4 +247,77 @@ test('the licence of the project names the right holder', () => {
   const licence = read('LICENSE');
   assert.match(licence, /MIT License/);
   assert.match(licence, /Copyright \(c\) 2026 MASH \(Khaled Bhuiyan\)/);
+});
+
+test('the audio section has a field to paste any link into', () => {
+  const panel = read('src/sidepanel/sidepanel.html');
+  assert.match(panel, /Copy Paste any URL/);
+  assert.match(panel, /id="url"/);
+  assert.match(panel, /id="urlFetch"/);
+  // The field sits in the audio section, before the lyrics section.
+  const audio = panel.indexOf('1. Audio');
+  const field = panel.indexOf('id="url"');
+  const lyrics = panel.indexOf('2. Lyrics');
+  assert.ok(audio > -1, 'the audio section is there');
+  assert.ok(field > audio, 'the field is in the audio section');
+  assert.ok(field < lyrics, 'the field comes before the lyrics section');
+});
+
+test('the panel hands the link to the engine and never to the site', () => {
+  const script = read('src/sidepanel/sidepanel.js');
+  assert.match(script, /form\.append\('url', link\)/);
+  assert.match(script, /\/api\/lyrics\/url/);
+  // The address the user typed is data, and the only host is the local one.
+  assert.doesNotMatch(script, /https?:\/\/(?!127\.0\.0\.1|localhost)/);
+});
+
+test('the panel shows what the engine found behind the link', () => {
+  const script = read('src/sidepanel/sidepanel.js');
+  assert.match(script, /function showSource\(source, meta\)/);
+  assert.match(script, /urlName\.textContent = source\.title/);
+  assert.match(script, /language_source/);
+  // A guess is shown as a guess.
+  assert.match(script, /read from the title/);
+  assert.match(script, /found by the model/);
+});
+
+test('the language of the audio can be left to the engine', () => {
+  const panel = read('src/sidepanel/sidepanel.html');
+  assert.match(panel, /<option value="auto" selected>Auto, any language<\/option>/);
+  for (const code of ['en', 'hi', 'ur', 'ar', 'ru', 'zh', 'ja', 'ko']) {
+    assert.match(panel, new RegExp(`value="${code}"`), code);
+  }
+  const script = read('src/sidepanel/sidepanel.js');
+  assert.match(script, /form\.append\('language', langSel\.value\)/);
+});
+
+test('the player can play the audio the engine fetched', () => {
+  const script = read('src/sidepanel/sidepanel.js');
+  assert.match(script, /function attachEngineAudio\(path\)/);
+  assert.match(script, /engineAudioUrl = engineUrl \+ path/);
+  assert.match(script, /if \(data\.audio\) attachEngineAudio\(data\.audio\)/);
+});
+
+test('the panel takes a link away again when the user asks it to', () => {
+  const script = read('src/sidepanel/sidepanel.js');
+  assert.match(script, /urlClear\.addEventListener/);
+  assert.match(script, /function setLink\(value\)/);
+});
+
+test('every element the panel reaches for is in the page', () => {
+  // A name that is only in the script is a null in the browser, and a null
+  // throws the moment the code touches it.
+  const script = read('src/sidepanel/sidepanel.js');
+  const panel = read('src/sidepanel/sidepanel.html');
+  const names = new Set();
+  const pattern = /getElementById\('([^']+)'\)/g;
+  let match = pattern.exec(script);
+  while (match) {
+    names.add(match[1]);
+    match = pattern.exec(script);
+  }
+  assert.ok(names.size >= 20, `the panel reaches for ${names.size} elements`);
+  for (const name of names) {
+    assert.match(panel, new RegExp(`id="${name}"`), name);
+  }
 });

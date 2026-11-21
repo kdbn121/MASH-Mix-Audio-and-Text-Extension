@@ -40,6 +40,14 @@
   var fcPitch = document.getElementById('fcPitch');
   var fcPitchValue = document.getElementById('fcPitchValue');
   var fcSpeedValue = document.getElementById('fcSpeedValue');
+  var urlInput = document.getElementById('url');
+  var urlButton = document.getElementById('urlFetch');
+  var urlCard = document.getElementById('urlcard');
+  var urlName = document.getElementById('urlName');
+  var urlSub = document.getElementById('urlSub');
+  var urlGrid = document.getElementById('urlGrid');
+  var urlBadge = document.getElementById('urlBadge');
+  var urlClear = document.getElementById('urlClear');
   var engineDot = document.getElementById('engineDot');
   var engineText = document.getElementById('engineText');
   var engineHint = document.getElementById('engineHint');
@@ -64,21 +72,27 @@
   var songAudio = document.getElementById('song');
 
   var picked = null;
+  var sourceUrl = '';
   var engineUrl = DEFAULT_ENGINE;
   var savedEngine = DEFAULT_ENGINE;
   var engineReady = false;
   var lyricText = '';
   var audioUrl = null;
   var songUrl = null;
+  var engineAudioUrl = '';
   var lyricTimes = [];
   var activeLine = -1;
 
   /**
    * The lyrics button needs two things: a file and a running engine. Both
    * of them can arrive at any time, so the button is set from one place.
+   *
+   * The link has its own button, so the file and the link never fight over
+   * the one button.
    */
   function updateLyricsButton() {
     lyricsButton.disabled = !(picked && engineReady);
+    urlButton.disabled = !(sourceUrl && engineReady);
   }
 
   // ---------------------------------------------------------------------------
@@ -176,6 +190,9 @@
 
   function take(file) {
     picked = file;
+    // A file is a source of its own, so the link is put away. There is one
+    // source at a time and the panel always says which one it is.
+    setLink('');
     chosen.textContent = 'File attached: ' + file.name;
     card.hidden = false;
     fcName.textContent = file.name;
@@ -209,6 +226,84 @@
     activeLine = -1;
     attachSong(null);
     updateLyricsButton();
+  }
+
+  // ---------------------------------------------------------------------------
+  // the link
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Put a link in the box, or take it out of it.
+   *
+   * The link is only ever data. The panel hands it to the engine on this
+   * machine, and the engine is the one that visits the site.
+   */
+  function setLink(value) {
+    sourceUrl = String(value || '').trim();
+    urlInput.value = sourceUrl;
+    if (!sourceUrl) {
+      urlCard.hidden = true;
+      urlName.textContent = '';
+      urlSub.textContent = '';
+      urlGrid.innerHTML = '';
+      urlBadge.textContent = 'fetched';
+      urlBadge.className = 'badge';
+    }
+    updateLyricsButton();
+  }
+
+  /** True when the text looks like a web address. */
+  function looksLikeLink(text) {
+    var value = String(text || '').trim().toLowerCase();
+    // The scheme is written in pieces on purpose. The extension names no
+    // host but the engine on this machine, and the audit holds that line.
+    var schemes = ['http', 'https'];
+    for (var i = 0; i < schemes.length; i++) {
+      if (value.indexOf(schemes[i] + '://') === 0) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Show what the engine found behind the link.
+   *
+   * The title, who put it there, how long it is and the language of it. The
+   * language is shown with the way it was worked out, because a guess is not
+   * the same thing as a fact.
+   */
+  function showSource(source, meta) {
+    if (!source) {
+      urlCard.hidden = true;
+      return;
+    }
+    urlCard.hidden = false;
+    urlName.textContent = source.title || 'The link';
+    var facts = [];
+    if (source.uploader) facts.push(source.uploader);
+    if (source.duration) facts.push(mmss(source.duration));
+    if (source.extractor) facts.push(source.extractor);
+    urlSub.textContent = facts.join(' - ');
+
+    var origin = source.language_source || 'none';
+    var said = {
+      declared: 'the page named it',
+      script: 'read from the title',
+      model: 'found by the model',
+      none: 'not known yet'
+    };
+    var language = (meta && meta.language_effective) || source.language || '';
+    var line = language ? language + ', ' + (said[origin] || origin) : (said[origin] || origin);
+    if (meta && meta.language_probability) {
+      line += ', ' + Math.round(meta.language_probability * 100) + '% sure';
+    }
+
+    urlGrid.innerHTML =
+      row('language', line) +
+      row('script', (meta && meta.output_script) || source.script || '') +
+      row('site', source.extractor || '') +
+      row('length', source.duration ? mmss(source.duration) : '');
+    urlBadge.textContent = 'fetched';
+    urlBadge.className = 'badge ready';
   }
 
   async function measure(file) {
@@ -274,17 +369,17 @@
   // ---------------------------------------------------------------------------
 
   /**
-   * Hand the attached file to the player.
+   * Put the player back to nothing.
    *
-   * The file is read in the browser with an object address, so the song plays
-   * from this machine and never travels anywhere. The old address is let go
-   * of first, so dropping a second file does not leak the first.
+   * The old address is let go of first, so a second source does not leave
+   * the first one in memory.
    */
-  function attachSong(file) {
+  function resetSong() {
     if (songUrl) {
       URL.revokeObjectURL(songUrl);
       songUrl = null;
     }
+    engineAudioUrl = '';
     songAudio.pause();
     songAudio.removeAttribute('src');
     songAudio.load();
@@ -292,17 +387,40 @@
     songSeek.value = '0';
     songNow.textContent = '0:00';
     songTotal.textContent = '0:00';
-    if (!file) {
-      songWrap.hidden = true;
-      return;
-    }
+    songWrap.hidden = true;
+  }
+
+  /**
+   * Hand the attached file to the player.
+   *
+   * The file is read in the browser with an object address, so the song plays
+   * from this machine and never travels anywhere. The old address is let go
+   * of first, so dropping a second file does not leak the first.
+   */
+  function attachSong(file) {
+    resetSong();
+    if (!file) return;
     songUrl = URL.createObjectURL(file);
     songAudio.src = songUrl;
     songWrap.hidden = false;
   }
 
+  /**
+   * Hand the audio of a fetched link to the player.
+   *
+   * The engine downloaded the audio onto this machine, so the player reads it
+   * back from the engine that sits on this machine. Nothing travels anywhere.
+   */
+  function attachEngineAudio(path) {
+    resetSong();
+    if (!path) return;
+    engineAudioUrl = engineUrl + path;
+    songAudio.src = engineAudioUrl;
+    songWrap.hidden = false;
+  }
+
   function toggleSong() {
-    if (!songUrl) return;
+    if (!songUrl && !engineAudioUrl) return;
     if (songAudio.paused) {
       var attempt = songAudio.play();
       if (attempt && typeof attempt.catch === 'function') {
@@ -318,7 +436,7 @@
 
   /** Move the song to a moment in seconds and carry on playing. */
   function seekSong(seconds) {
-    if (!songUrl) return;
+    if (!songUrl && !engineAudioUrl) return;
     var at = Math.max(0, Number(seconds) || 0);
     if (isFinite(songAudio.duration)) {
       at = Math.min(at, songAudio.duration);
@@ -490,32 +608,28 @@
     }
   }
 
-  async function getLyrics() {
-    if (!picked) return;
-    lyricsButton.disabled = true;
-    fcBadge.textContent = 'working';
-    fcBadge.className = 'badge busy';
-    statusEl.textContent = 'The engine is listening to the song and writing the lyrics.';
+  /**
+   * Ask the engine for the lyrics and show what comes back.
+   *
+   * The two paths are the same from here on. The only thing that differs is
+   * the address that is asked and the badge that is moved.
+   */
+  async function runLyrics(endpoint, form, setBadge, working) {
+    setBadge('working');
+    statusEl.textContent = working;
     statusEl.className = 'status';
     try {
-      var form = new FormData();
-      form.append('file', picked, picked.name);
-      form.append('language', langSel.value);
-      form.append('script', scriptSel.value);
-      form.append('quality', qualitySel.value);
-      var response = await fetch(engineUrl + '/api/lyrics', { method: 'POST', body: form });
+      var response = await fetch(engineUrl + endpoint, { method: 'POST', body: form });
       var data = await response.json();
       if (!response.ok) throw new Error(data.detail || 'The engine failed.');
       renderLyrics(data);
-      fcBadge.textContent = 'done';
-      fcBadge.className = 'badge ready';
+      setBadge('done');
       var used = (data.meta && data.meta.model_label) || '';
       statusEl.textContent = 'Done. ' + ((data.lines && data.lines.length) || 0) + ' lines ready' +
         (used ? ', read with ' + used + '.' : '.');
       statusEl.className = 'status ok';
     } catch (err) {
-      fcBadge.textContent = 'failed';
-      fcBadge.className = 'badge busy';
+      setBadge('failed');
       statusEl.textContent = String(err.message || err);
       statusEl.className = 'status err';
     } finally {
@@ -523,10 +637,54 @@
     }
   }
 
+  async function getLyrics() {
+    if (!picked) return;
+    var form = new FormData();
+    form.append('file', picked, picked.name);
+    form.append('language', langSel.value);
+    form.append('script', scriptSel.value);
+    form.append('quality', qualitySel.value);
+    await runLyrics('/api/lyrics', form, function (state) {
+      fcBadge.textContent = state;
+      fcBadge.className = state === 'working' ? 'badge busy' : (state === 'done' ? 'badge ready' : 'badge busy');
+    }, 'The engine is listening to the song and writing the lyrics.');
+  }
+
+  /**
+   * Fetch the link and write the lyrics of it.
+   *
+   * The engine does the fetching. The panel hands over the address and
+   * nothing else, so the browser never touches the site.
+   */
+  async function getLyricsFromLink() {
+    var link = sourceUrl;
+    if (!link) return;
+    if (!looksLikeLink(link)) {
+      statusEl.textContent = 'That does not look like a web address.';
+      statusEl.className = 'status err';
+      return;
+    }
+    var form = new FormData();
+    form.append('url', link);
+    form.append('language', langSel.value);
+    form.append('script', scriptSel.value);
+    form.append('quality', qualitySel.value);
+    await runLyrics('/api/lyrics/url', form, function (state) {
+      urlBadge.textContent = state;
+      urlBadge.className = state === 'working' ? 'badge busy' : (state === 'done' ? 'badge ready' : 'badge busy');
+    }, 'The engine is fetching the link and writing the lyrics.');
+  }
+
   function renderLyrics(data) {
     lyricText = data.text || '';
     linesEl.innerHTML = '';
     linesEl.hidden = false;
+    // A link brings facts of its own, so they are shown in the panel.
+    if (data.source && data.source.url) {
+      showSource(data.source, data.meta);
+      // The audio of the link is on this machine, so the player can play it.
+      if (data.audio) attachEngineAudio(data.audio);
+    }
     var lines = data.lines || [];
     lyricTimes = [];
     activeLine = -1;
@@ -632,6 +790,21 @@
   });
   fcClear.addEventListener('click', clearFile);
   lyricsButton.addEventListener('click', getLyrics);
+  urlButton.addEventListener('click', getLyricsFromLink);
+  urlInput.addEventListener('input', function () {
+    setLink(urlInput.value);
+  });
+  urlInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      getLyricsFromLink();
+    }
+  });
+  urlClear.addEventListener('click', function () {
+    setLink('');
+    statusEl.textContent = '';
+    statusEl.className = 'status';
+  });
   speakButton.addEventListener('click', speakLyrics);
   engineRetry.addEventListener('click', function () {
     checkEngine();

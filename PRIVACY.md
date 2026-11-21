@@ -25,6 +25,26 @@ the settings, which is a server on this machine:
 **Speak the lyrics** sends the lyric text to the same local engine. Nothing
 else is sent, and no other host is ever contacted.
 
+## What happens when you paste a link
+
+When you press **Fetch from the link**, the extension sends the address you
+pasted to the local engine, and nothing else. The browser never visits the
+site.
+
+The engine on this machine is then the one that visits it, the way any
+downloader does. The audio is written to a folder on this machine and the
+lyrics are written next to it. The site you named sees your address the way
+it would see the address of any visitor, and the engine talks to no vendor,
+no telemetry service and no account service.
+
+The panel then plays the copy of the audio that the engine put on this
+machine, by asking the engine on this machine for it. Nothing is sent to the
+site by the panel, and nothing about the song is sent anywhere off this
+machine.
+
+The permissions of the extension do not change when a link is used. The
+extension can still only reach `127.0.0.1` and `localhost`.
+
 ## The permissions and why they are there
 
 | Permission | Why |

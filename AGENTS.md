@@ -43,14 +43,23 @@ exists for the node test and audit tooling.
 9. **The engine needs CORS for the local origins.** The browser holds the
    extension to its own rules for a call that comes from another origin, so
    the engine answers with the header for the local origins only.
-10. **The player plays the local file.** The song is handed to the player as
-    an object address made from the file the user attached, so it plays in
-    the browser without anything being sent anywhere. The address is let go
-    of when the file is replaced or removed, or the browser holds on to it
-    for the life of the panel.
+10. **The player plays what is on this machine.** The song is handed to the
+    player as an object address made from the file the user attached, so it
+    plays in the browser without anything being sent anywhere. When the song
+    came from a link, the engine downloaded it onto this machine and the
+    player asks the engine on this machine for that copy. The address is let
+    go of when the source is replaced or removed, or the browser holds on to
+    it for the life of the panel.
 11. **A lyric line carries the song to its moment.** The lines carry the time
     they start at, so clicking one takes the song there and marks the line
     under the playhead while the song runs.
+12. **The browser never visits the site.** The link the user pastes is data.
+    The panel hands it to the engine on this machine and the engine does the
+    fetching, so the extension names no host but the local one and the audit
+    rule holds. The permission list does not grow for a link.
+13. **A guess about the language is shown as a guess.** The panel says where
+    the language came from: the page named it, the title was read, or the
+    model found it.
 
 ## The analysis rules that were bugs once
 

@@ -136,6 +136,32 @@ h1 { font-size: 18px; margin: 0; letter-spacing: -0.2px; }
 }
 .fc-clear:hover { color: var(--accent); }
 
+/* the link the user pastes */
+.urlbox {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.urllabel {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+#url {
+  width: 100%;
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  font: inherit;
+  font-size: 12.5px;
+}
+#url:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.urlbox button { margin-top: 8px; width: auto; }
+.urlnote { margin-top: 7px; font-size: 11px; color: var(--muted); line-height: 1.5; }
+
 /* the local engine */
 .engine { display: flex; align-items: center; gap: 8px; font-size: 12.5px; }
 #engineText { flex: 1 1 auto; min-width: 0; overflow-wrap: break-word; }

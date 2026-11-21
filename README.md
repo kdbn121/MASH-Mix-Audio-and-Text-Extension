@@ -11,6 +11,11 @@ browser, on your machine. The only thing that is ever sent anywhere is the file
 itself, and only when you press **Get the lyrics**, and only to the engine on
 your own machine.
 
+When you paste a link, the address goes to the engine on your own machine and
+the engine is the one that visits the site, the way any downloader does. The
+audio and the lyrics are written to this machine. Nothing about the song goes
+to a vendor.
+
 ![The side panel with the measurements of a song](screenshots/panel-measurements.png)
 
 ![The side panel with the lyrics of the song and the engine found](screenshots/panel-lyrics.png)
@@ -37,6 +42,36 @@ Chrome 114 or newer is needed for the side panel. Edge works the same way.
 
 The name of the file, its size, its length, the number of channels and the
 sample rate it was decoded at.
+
+### Copy Paste any URL
+
+Under the drop zone there is a field for a link. Paste the address of a song,
+a YouTube video, a Dailymotion page or anything else the engine can read, and
+press **Fetch from the link**.
+
+The engine on your machine does the fetching. The panel hands over the address
+and nothing else, so the browser never visits the site, and the panel still
+cannot reach anything but your own machine.
+
+What comes back is shown in a card above the lyrics:
+
+| What you see | What it means |
+|---|---|
+| The title | The name the page gave the song |
+| The line under it | Who put it there, how long it is and which site it came from |
+| The language | The language of the song and how it was worked out |
+| The script | The writing system the lyrics are in |
+
+The language is worked out in three steps, and the panel says which one was
+used. A page that names its own language is believed. A page that says
+nothing is read from the script of its title, for example the Bengali letters
+of a Bengali title. When the page says nothing at all, the model is asked what
+it hears. A guess is always shown as a guess.
+
+The lyrics of the fetched song are written exactly like the lyrics of an
+attached file, and the subtitle files are downloaded the same way. The audio
+the engine downloaded is on your machine, so the player plays that copy and
+you can follow the words as they are sung.
 
 ### The measurements
 
@@ -88,6 +123,19 @@ The **Model** choice tells the engine which recogniser to reach for.
 
 The panel says which model did the work once the lyrics are ready.
 
+### Choosing the language
+
+The **Language** choice is **Auto, any language** by default.
+
+| The choice | What it means |
+|---|---|
+| Auto, any language | The engine finds the language of the audio on its own, from the page, from the title and from the model |
+| bn-BD, bn-IN, bn | Bangla, with the region worked out or forced |
+| Any other code | The language is forced. A language other than Bangla keeps the script the recogniser used, because there is nothing to convert it to |
+
+The **Script** choice only applies to Bangla. It chooses between the native
+Bangla script and romanised Bangla.
+
 ### The engine line
 
 The dot under **2. Lyrics** says whether the engine was found.
@@ -132,13 +180,16 @@ it.
 **2. Get the engine.** From the
 [MASH-Mix-Audio-and-Text repository](https://github.com/kdbn121/MASH-Mix-Audio-and-Text),
 clone it, or take the source archive from the
-[v0.1.5 release](https://github.com/kdbn121/MASH-Mix-Audio-and-Text/releases/tag/v0.1.5).
+[v0.3.0 release](https://github.com/kdbn121/MASH-Mix-Audio-and-Text/releases/tag/v0.3.0).
 
 **3. Install it.**
 
 ```bash
-pip install "mash-mix-audio-and-text[server] @ git+https://github.com/kdbn121/MASH-Mix-Audio-and-Text.git"
+pip install "mash-mix-audio-and-text[server,sources] @ git+https://github.com/kdbn121/MASH-Mix-Audio-and-Text.git"
 ```
+
+The **sources** extra is the fetcher for links. Without it the panel still measures
+files and reads local songs, and only the link stays out of reach.
 
 **4. Start it and leave it running.**
 

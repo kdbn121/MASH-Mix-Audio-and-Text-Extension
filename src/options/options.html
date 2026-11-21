@@ -96,8 +96,8 @@
     <p class="hint">The extension measures a file on its own. The engine is only needed for the lyrics and the voice.</p>
     <ol class="steps">
       <li>Install Python 3.9 or newer from <a href="https://www.python.org/downloads/" target="_blank" rel="noreferrer noopener">python.org</a>. On Windows, tick <b>Add Python to PATH</b> in the installer.</li>
-      <li>Get the engine from <a href="https://github.com/kdbn121/MASH-Mix-Audio-and-Text" target="_blank" rel="noreferrer noopener">the MASH-Mix repository</a>, or take the source archive from its <a href="https://github.com/kdbn121/MASH-Mix-Audio-and-Text/releases/tag/v0.1.5" target="_blank" rel="noreferrer noopener">release page</a>.</li>
-      <li>Open a terminal and run<br><code>pip install "mash-mix-audio-and-text[server] @ git+https://github.com/kdbn121/MASH-Mix-Audio-and-Text.git"</code></li>
+      <li>Get the engine from <a href="https://github.com/kdbn121/MASH-Mix-Audio-and-Text" target="_blank" rel="noreferrer noopener">the MASH-Mix repository</a>, or take the source archive from its <a href="https://github.com/kdbn121/MASH-Mix-Audio-and-Text/releases/tag/v0.3.0" target="_blank" rel="noreferrer noopener">release page</a>.</li>
+      <li>Open a terminal and run<br><code>pip install "mash-mix-audio-and-text[server,sources] @ git+https://github.com/kdbn121/MASH-Mix-Audio-and-Text.git"</code><br>The <b>sources</b> extra is the fetcher for links.</li>
       <li>Start the engine and leave it running:<br><code>mash-mix serve --host 127.0.0.1 --port 8000</code></li>
       <li>Load the extension from <a href="https://github.com/kdbn121/MASH-Mix-Audio-and-Text-Extension" target="_blank" rel="noreferrer noopener">the extension repository</a>. Unzip it, open <code>chrome://extensions</code>, turn on <b>Developer mode</b>, press <b>Load unpacked</b> and pick the folder.</li>
       <li>Press <b>Test the engine</b> here. It answers with the version when everything is in place.</li>
