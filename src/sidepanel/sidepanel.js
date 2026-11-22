@@ -89,6 +89,8 @@
   var editorSrt = document.getElementById('edSrt');
   var editorNote = document.getElementById('edNote');
   var editorAdd = document.getElementById('edAdd');
+  var editorAddUp = document.getElementById('edAddUp');
+  var editorAddDown = document.getElementById('edAddDown');
   var editorSplit = document.getElementById('edSplit');
   var editorMerge = document.getElementById('edMerge');
   var editorRemove = document.getElementById('edRemove');
@@ -97,6 +99,12 @@
   var editorPaste = document.getElementById('edPaste');
   var editorDownloadSrt = document.getElementById('edDownloadSrt');
   var editorDownloadTxt = document.getElementById('edDownloadTxt');
+  var editorPreview = document.getElementById('edPreview');
+  var editorPreviewNum = document.getElementById('edPreviewNum');
+  var editorPreviewStart = document.getElementById('edPreviewStart');
+  var editorPreviewEnd = document.getElementById('edPreviewEnd');
+  var editorPreviewWords = document.getElementById('edPreviewWords');
+  var editorPreviewPlay = document.getElementById('edPreviewPlay');
 
   var picked = null;
   var sourceUrl = '';
@@ -197,6 +205,9 @@
     renderEditor: renderEditor,
     refreshEditor: refreshEditor,
     addCue: addCue,
+    addCueAbove: addCueAbove,
+    addCueBelow: addCueBelow,
+    renderPreview: renderPreview,
     splitSelected: splitSelected,
     mergeSelected: mergeSelected,
     removeSelected: removeSelected,
@@ -204,6 +215,8 @@
     copySelected: copySelected,
     pasteSelected: pasteSelected,
     selectCue: selectCue,
+    toggleSong: toggleSong,
+    setPlaying: setPlaying,
     stepSong: stepSong,
     startSeekHold: startSeekHold,
     stopSeekHold: stopSeekHold
@@ -651,7 +664,7 @@
     songAudio.pause();
     songAudio.removeAttribute('src');
     songAudio.load();
-    songWrap.classList.remove('playing');
+    setPlaying(false);
     songSeek.value = '0';
     songNow.textContent = '0:00';
     songTotal.textContent = '0:00';
@@ -714,6 +727,76 @@
     }
   }
 
+  /**
+   * Say that the song is playing, or that it is not.
+   *
+   * The button shows the state of the song and not the state of the last
+   * thing that was done, so the two can never disagree. The song carries on
+   * from the moment it was paused at, so a pause is a pause and not a jump.
+   */
+  function setPlaying(playing) {
+    if (playing) {
+      songWrap.classList.add('playing');
+      songPlay.setAttribute('aria-label', 'Pause the song');
+      songPlay.setAttribute('title', 'Pause the song');
+      return;
+    }
+    songWrap.classList.remove('playing');
+    songPlay.setAttribute('aria-label', 'Play the song');
+    songPlay.setAttribute('title', 'Play the song');
+  }
+
+  /**
+   * True when the key is going into a box that a person is typing in.
+   *
+   * A space is a word in a box of words, so the box keeps the space bar and
+   * the song is not started or stopped by it.
+   */
+  function isTyping(target) {
+    if (!target) return false;
+    var tag = String(target.tagName || '').toUpperCase();
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+    if (target.isContentEditable) return true;
+    return false;
+  }
+
+  /**
+   * The space bar starts and stops the song.
+   *
+   * The key is taken by the panel, so the song can be stopped and started
+   * without reaching for the mouse, and the button says which of the two it
+   * will do next. A button has the space bar already, and a box that is being
+   * typed into keeps it.
+   */
+  function onKeyDown(e) {
+    if (!e) return;
+    // The two keys of the editor: alt and the arrow keys put a line above or
+    // under the line that is being worked on.
+    if (e.altKey && !e.ctrlKey && !e.metaKey) {
+      if (e.key === 'ArrowUp' || e.key === 'Up') {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        addCueAbove();
+        return;
+      }
+      if (e.key === 'ArrowDown' || e.key === 'Down') {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        addCueBelow();
+        return;
+      }
+    }
+    if (e.key !== ' ' && e.code !== 'Space') return;
+    if (e.repeat) return;
+    if (isTyping(e.target)) return;
+    var tag = String((e.target && e.target.tagName) || '').toUpperCase();
+    if (tag === 'BUTTON' || tag === 'A') return;
+    if (typeof e.preventDefault === 'function') e.preventDefault();
+    toggleSong();
+  }
+
+  if (typeof document !== 'undefined' && document.addEventListener) {
+    document.addEventListener('keydown', onKeyDown);
+  }
+
   /** Move the song to a moment in seconds and carry on playing. */
   function seekSong(seconds) {
     if (!hasSong()) return;
@@ -752,12 +835,10 @@
   }
 
   songAudio.addEventListener('play', function () {
-    songWrap.classList.add('playing');
-    songPlay.setAttribute('aria-label', 'Pause the song');
+    setPlaying(true);
   });
   songAudio.addEventListener('pause', function () {
-    songWrap.classList.remove('playing');
-    songPlay.setAttribute('aria-label', 'Play the song');
+    setPlaying(false);
   });
   songAudio.addEventListener('loadedmetadata', function () {
     songTotal.textContent = mmss(songAudio.duration);
@@ -775,8 +856,7 @@
     markActiveLine(songAudio.currentTime);
   });
   songAudio.addEventListener('ended', function () {
-    songWrap.classList.remove('playing');
-    songPlay.setAttribute('aria-label', 'Play the song');
+    setPlaying(false);
     songSeek.value = '0';
     songNow.textContent = '0:00';
   });
@@ -1223,6 +1303,7 @@
   function selectCue(index) {
     cueSelected = index;
     markSelected();
+    renderPreview();
   }
 
   /**
@@ -1238,7 +1319,33 @@
     lyricText = ed.buildTxt(cues);
     outcomeText.textContent = lyricText;
     renderLines();
+    renderPreview();
     refreshEditorMeta();
+  }
+
+  /**
+   * Show the line that is being worked on.
+   *
+   * The two moments are written the way a subtitle file writes them, so what
+   * is on the screen is exactly what the file will carry. The panel is drawn
+   * again every time a line is changed, so the preview follows the line that
+   * is being worked on as it is worked on.
+   */
+  function renderPreview() {
+    var cue = cueSelected >= 0 && cueSelected < cues.length ? cues[cueSelected] : null;
+    if (!cue) {
+      editorPreviewNum.textContent = '-';
+      editorPreviewStart.textContent = ed.formatTime(0);
+      editorPreviewEnd.textContent = ed.formatTime(0);
+      editorPreviewWords.textContent = 'Choose a line and it is shown here.';
+      editorPreviewPlay.disabled = true;
+      return;
+    }
+    editorPreviewNum.textContent = String(cueSelected + 1);
+    editorPreviewStart.textContent = ed.formatTime(ed.cueStart(cue));
+    editorPreviewEnd.textContent = ed.formatTime(ed.cueEnd(cue));
+    editorPreviewWords.textContent = String(cue.text == null ? '' : cue.text);
+    editorPreviewPlay.disabled = false;
   }
 
   /** The count of the lines and the words, under the editor. */
@@ -1293,16 +1400,55 @@
     }
   }
 
-  /** Put a new line into the list of cues and draw the editor again. */
+  /**
+   * Put a new line into the list of cues and draw the editor again.
+   *
+   * The plain add has no line to sit against, so the new line goes at the end
+   * of the list. The two other buttons put a line above or under the line that
+   * is being worked on.
+   */
   function addCue() {
-    var before = cueSelected >= 0 ? cues[cueSelected] : null;
-    var after = cueSelected >= 0 && cueSelected + 1 < cues.length ? cues[cueSelected + 1] : null;
-    var cue = ed.blankCue(before, after);
-    var at = cueSelected >= 0 ? cueSelected + 1 : cues.length;
+    var before = cues.length ? cues[cues.length - 1] : null;
+    var cue = ed.blankCue(before, null);
+    var at = cues.length;
     cues.splice(at, 0, cue);
     cueSelected = at;
     renderEditor();
-    editorNote.textContent = 'A new line was added. Type the words into it.';
+    editorNote.textContent = 'A new line was added at the end. Type the words into it.';
+  }
+
+  /**
+   * Put a new line above the line that is being worked on.
+   *
+   * With no line chosen, the new line goes to the top of the list, because
+   * up means towards the start of the song.
+   */
+  function addCueAbove() {
+    var at = cueSelected >= 0 ? cueSelected : 0;
+    var before = at > 0 ? cues[at - 1] : null;
+    var after = at < cues.length ? cues[at] : null;
+    var cue = ed.blankCue(before, after);
+    cues.splice(at, 0, cue);
+    cueSelected = at;
+    renderEditor();
+    editorNote.textContent = 'A new line was added above the line you were on.';
+  }
+
+  /**
+   * Put a new line under the line that is being worked on.
+   *
+   * With no line chosen, the new line goes to the end of the list, because
+   * down means towards the end of the song.
+   */
+  function addCueBelow() {
+    var at = cueSelected >= 0 ? cueSelected + 1 : cues.length;
+    var before = at > 0 ? cues[at - 1] : null;
+    var after = at < cues.length ? cues[at] : null;
+    var cue = ed.blankCue(before, after);
+    cues.splice(at, 0, cue);
+    cueSelected = at;
+    renderEditor();
+    editorNote.textContent = 'A new line was added under the line you were on.';
   }
 
   /**
@@ -1675,6 +1821,8 @@
   outcomeCopy.addEventListener('click', copyOutcome);
   outcomeDownload.addEventListener('click', downloadOutcome);
   editorAdd.addEventListener('click', addCue);
+  editorAddUp.addEventListener('click', addCueAbove);
+  editorAddDown.addEventListener('click', addCueBelow);
   editorSplit.addEventListener('click', splitSelected);
   editorMerge.addEventListener('click', mergeSelected);
   editorRemove.addEventListener('click', removeSelected);
@@ -1683,6 +1831,11 @@
   editorPaste.addEventListener('click', pasteSelected);
   editorDownloadSrt.addEventListener('click', downloadEditedSrt);
   editorDownloadTxt.addEventListener('click', downloadEditedTxt);
+  editorPreviewPlay.addEventListener('click', function () {
+    if (cueSelected < 0 || cueSelected >= cues.length) return;
+    seekSong(ed.cueStart(cues[cueSelected]));
+    if (songAudio.paused) toggleSong();
+  });
   engineRetry.addEventListener('click', function () {
     checkEngine();
   });

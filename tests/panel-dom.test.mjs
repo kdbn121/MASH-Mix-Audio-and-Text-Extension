@@ -68,6 +68,8 @@ class El {
     this.style = {};
     this.selected = false;
     this._html = '';
+    // An audio element starts paused.
+    this.paused = true;
     // The class list of a real element. The panel adds and removes names on
     // it, and the test reads it to see what is marked.
     const names = new Set();
@@ -161,8 +163,7 @@ class El {
     return Promise.resolve();
   }
 
-  load() {}
-}
+  load() {}}
 
 /** The lyrics the stood in engine answers with. */
 const LYRICS = {
@@ -223,12 +224,22 @@ function loadPanel(options) {
 
   const document = {
     body: new El('body'),
+    handlers: {},
     getElementById(id) {
       if (!elements.has(id)) elements.set(id, new El('div'));
       return elements.get(id);
     },
     createElement(tag) {
       return new El(tag);
+    },
+    addEventListener(type, fn) {
+      if (!this.handlers[type]) this.handlers[type] = [];
+      this.handlers[type].push(fn);
+    },
+    dispatch(type, event) {
+      const list = this.handlers[type] || [];
+      const ev = event || { preventDefault() {}, stopPropagation() {} };
+      for (const fn of list) fn(ev);
     },
     execCommand(command) {
       if (command !== 'copy') return false;
@@ -820,4 +831,214 @@ test('the five second buttons sit over the line that says the song plays here', 
   assert.ok(nav < hint, 'the buttons are over the line that says the song plays here');
   assert.match(PAGE, /id="songBack"/);
   assert.match(PAGE, /id="songFwd"/);
+});
+
+test('the editor toolbar carries the buttons in the order they are needed', () => {
+  const block = PAGE.match(/<div class="ed-tools">([\s\S]*?)<\/div>/);
+  assert.ok(block, 'the editor has a toolbar');
+  const ids = [...block[1].matchAll(/id="([^"]+)"/g)].map((one) => one[1]);
+  assert.deepEqual(ids, [
+    'edAdd',
+    'edAddUp',
+    'edAddDown',
+    'edSplit',
+    'edMerge',
+    'edRemove',
+    'edCut',
+    'edCopy',
+    'edPaste'
+  ]);
+});
+
+test('the track preview sits under the toolbar of the editor', () => {
+  const tools = PAGE.indexOf('class="ed-tools"');
+  const preview = PAGE.indexOf('id="edPreview"');
+  const list = PAGE.indexOf('id="edList"');
+  assert.ok(tools > 0, 'the editor has a toolbar');
+  assert.ok(preview > tools, 'the preview is under the toolbar');
+  assert.ok(preview < list, 'the preview is over the list of lines');
+});
+
+test('the track preview shows the moments of the line being worked on', async () => {
+  const dom = await withLyrics();
+
+  dom.panel.selectCue(1);
+
+  assert.equal(dom.document.getElementById('edPreviewNum').textContent, '2', 'the number of the line');
+  assert.equal(
+    dom.document.getElementById('edPreviewStart').textContent,
+    '00:00:22,880',
+    'the moment the line starts at'
+  );
+  assert.equal(
+    dom.document.getElementById('edPreviewEnd').textContent,
+    '00:00:28,360',
+    'the moment the line ends at'
+  );
+  assert.match(dom.document.getElementById('edPreviewWords').textContent, /বলতে তবু/);
+});
+
+test('the track preview writes the moments the way the file writes them', async () => {
+  const dom = await withLyrics();
+  dom.panel.selectCue(0);
+
+  const start = dom.document.getElementById('edPreviewStart').textContent;
+  const end = dom.document.getElementById('edPreviewEnd').textContent;
+  assert.match(start, /^\d{2}:\d{2}:\d{2},\d{3}$/, 'the start is in the form of the file');
+  assert.match(end, /^\d{2}:\d{2}:\d{2},\d{3}$/, 'the end is in the form of the file');
+});
+
+test('the track preview follows the moments that are changed', async () => {
+  const dom = await withLyrics();
+  dom.panel.selectCue(0);
+
+  const field = startField(dom, 0);
+  field.value = '00:01:02,345';
+  field.dispatch('change', {});
+
+  assert.equal(
+    dom.document.getElementById('edPreviewStart').textContent,
+    '00:01:02,345',
+    'the preview shows the moment that was typed'
+  );
+});
+
+test('the track preview shows the line that is chosen', async () => {
+  const dom = await withLyrics();
+
+  dom.panel.selectCue(0);
+  assert.match(dom.document.getElementById('edPreviewWords').textContent, /বলতে যে মনে হয়/);
+
+  dom.panel.selectCue(1);
+  assert.match(dom.document.getElementById('edPreviewWords').textContent, /বলতে তবু/);
+});
+
+test('a line is added above the line being worked on', async () => {
+  const dom = await withLyrics();
+
+  dom.panel.selectCue(0);
+  dom.document.getElementById('edAddUp').click();
+
+  assert.equal(editorRows(dom).length, 3, 'a line was added');
+  assert.equal(startField(dom, 0).value, '00:00:00,000', 'the new line is at the top');
+  assert.equal(endField(dom, 0).value, '00:00:14,880', 'the new line ends where the line below it starts');
+  assert.equal(startField(dom, 1).value, '00:00:14,880', 'the line that was chosen is still there');
+  assert.match(dom.document.getElementById('edNote').textContent, /above/);
+});
+
+test('a line is added under the line being worked on', async () => {
+  const dom = await withLyrics();
+
+  dom.panel.selectCue(0);
+  dom.document.getElementById('edAddDown').click();
+
+  assert.equal(editorRows(dom).length, 3, 'a line was added');
+  assert.equal(startField(dom, 1).value, '00:00:22,880', 'the new line is under the line that was chosen');
+  assert.equal(endField(dom, 1).value, '00:00:25,880', 'the new line lasts three seconds');
+  assert.equal(startField(dom, 2).value, '00:00:22,880', 'the line that was chosen is still there');
+  assert.match(dom.document.getElementById('edNote').textContent, /under/);
+});
+
+test('a line is added at the top and at the end with no line chosen', async () => {
+  const dom = await withLyrics();
+
+  dom.panel.selectCue(-1);
+  dom.document.getElementById('edAddUp').click();
+  assert.equal(editorRows(dom).length, 3, 'a line was added');
+  assert.equal(startField(dom, 0).value, '00:00:00,000', 'the new line is at the top');
+
+  dom.panel.selectCue(-1);
+  dom.document.getElementById('edAddDown').click();
+  assert.equal(editorRows(dom).length, 4, 'another line was added');
+  assert.equal(startField(dom, 3).value, '00:00:28,360', 'the new line is at the end');
+});
+
+test('a line is added in the middle of the list', async () => {
+  const dom = await withLyrics();
+
+  dom.panel.selectCue(0);
+  dom.document.getElementById('edAddUp').click();
+  dom.panel.selectCue(2);
+  dom.document.getElementById('edAddDown').click();
+
+  assert.equal(editorRows(dom).length, 4, 'two lines were added');
+  assert.equal(startField(dom, 3).value, '00:00:28,360', 'the new line is under the last line');
+  assert.equal(endField(dom, 3).value, '00:00:31,360', 'the new line lasts three seconds');
+});
+
+test('the space bar starts and stops the song', async () => {
+  const dom = await withLyrics();
+  const song = withSong(dom);
+  const wrap = dom.document.getElementById('songplay');
+  const button = dom.document.getElementById('songPlay');
+
+  dom.document.dispatch('keydown', { key: ' ', target: null, preventDefault() {} });
+  assert.equal(song.paused, false, 'the space bar started the song');
+  song.dispatch('play', {});
+  assert.equal(wrap.classList.contains('playing'), true, 'the button shows that the song is playing');
+  assert.equal(button.getAttribute('aria-label'), 'Pause the song', 'the button says it will stop the song');
+
+  dom.document.dispatch('keydown', { key: ' ', target: null, preventDefault() {} });
+  assert.equal(song.paused, true, 'the space bar stopped the song');
+  song.dispatch('pause', {});
+  assert.equal(wrap.classList.contains('playing'), false, 'the button shows that the song is stopped');
+  assert.equal(button.getAttribute('aria-label'), 'Play the song', 'the button says it will start the song');
+});
+
+test('the song carries on from the moment it was paused at', async () => {
+  const dom = await withLyrics();
+  const song = withSong(dom);
+  song.currentTime = 42;
+
+  dom.document.dispatch('keydown', { key: ' ', target: null, preventDefault() {} });
+  assert.equal(song.currentTime, 42, 'the song did not move when it was started');
+
+  dom.document.dispatch('keydown', { key: ' ', target: null, preventDefault() {} });
+  assert.equal(song.currentTime, 42, 'the song did not move when it was stopped');
+});
+
+test('a box of words keeps the space bar', async () => {
+  const dom = await withLyrics();
+  const song = withSong(dom);
+
+  dom.document.dispatch('keydown', {
+    key: ' ',
+    target: wordsBox(dom, 0),
+    preventDefault() {}
+  });
+  assert.equal(song.paused, true, 'a space in a box of words did not start the song');
+});
+
+test('the button of the player starts and stops the song as well', async () => {
+  const dom = await withLyrics();
+  const song = withSong(dom);
+  const button = dom.document.getElementById('songPlay');
+
+  button.click();
+  assert.equal(song.paused, false, 'the button started the song');
+
+  button.click();
+  assert.equal(song.paused, true, 'the button stopped the song');
+});
+
+test('the keys of the editor put a line above and under', async () => {
+  const dom = await withLyrics();
+
+  dom.panel.selectCue(1);
+  dom.document.dispatch('keydown', {
+    key: 'ArrowUp',
+    altKey: true,
+    target: null,
+    preventDefault() {}
+  });
+  assert.equal(editorRows(dom).length, 3, 'a line was added above');
+  assert.equal(startField(dom, 1).value, '00:00:22,880', 'the new line is above the line that was chosen');
+
+  dom.document.dispatch('keydown', {
+    key: 'ArrowDown',
+    altKey: true,
+    target: null,
+    preventDefault() {}
+  });
+  assert.equal(editorRows(dom).length, 4, 'a line was added under');
 });

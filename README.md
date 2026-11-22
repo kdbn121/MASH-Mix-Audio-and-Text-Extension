@@ -144,6 +144,13 @@ sung without aiming at the bar.
 the moment it starts at, and the line under the playhead is marked while the
 song runs, so the words can be followed as they are sung.
 
+**The space bar starts and stops the song as well.** The round button shows
+whether the song is playing or paused, and it is the only button: press it and
+the song plays, press it again and the song stops where it is and carries on
+from there when you press it a third time. The space bar does the same, so the
+song can be stopped without reaching for the mouse. A box of words keeps the
+space bar, because a space is a word there.
+
 ### The editor
 
 Under the lyrics there is a third card, **3. Editor**, and it holds the lines
@@ -157,7 +164,10 @@ written from the same list, so they can never disagree with each other.
 | The two times | When the line starts and when it ends. Type over either one |
 | The box of words | The words of the line, and they are yours to change |
 | **play** | Takes the song to the moment that line starts at |
-| **Add a line** | Adds an empty line after the one that is picked |
+| **Track preview** | The line that is being worked on, with its two moments written the way the subtitle file writes them, `00:00:00,000` |
+| **Add a line** | Adds an empty line at the end of the list |
+| **Add a line Up** | Adds an empty line above the line that is picked. Alt and the up arrow do the same |
+| **Add a line Down** | Adds an empty line under the line that is picked. Alt and the down arrow do the same |
 | **Split** | Cuts the line in two where the caret is in the box of words |
 | **Merge** | Joins the line that is picked with the one after it |
 | **Remove** | Takes the line that is picked away |

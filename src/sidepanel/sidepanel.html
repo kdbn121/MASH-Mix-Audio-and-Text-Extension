@@ -251,12 +251,26 @@
 
   <div class="ed-tools">
     <button type="button" class="ghost" id="edAdd">Add a line</button>
+    <button type="button" class="ghost" id="edAddUp" aria-label="Add a line above the line you are on">Add a line Up</button>
+    <button type="button" class="ghost" id="edAddDown" aria-label="Add a line under the line you are on">Add a line Down</button>
     <button type="button" class="ghost" id="edSplit">Split</button>
     <button type="button" class="ghost" id="edMerge">Merge</button>
     <button type="button" class="ghost" id="edRemove">Remove</button>
     <button type="button" class="ghost" id="edCut">Cut</button>
     <button type="button" class="ghost" id="edCopy">Copy</button>
     <button type="button" class="ghost" id="edPaste">Paste</button>
+  </div>
+
+  <div class="ed-preview" id="edPreview">
+    <div class="ed-preview-title">Track preview</div>
+    <div class="ed-head">
+      <span class="ed-num" id="edPreviewNum">-</span>
+      <span class="ed-time ed-preview-time" id="edPreviewStart">00:00:00,000</span>
+      <span class="ed-arrow">to</span>
+      <span class="ed-time ed-preview-time" id="edPreviewEnd">00:00:00,000</span>
+      <button type="button" class="ed-play" id="edPreviewPlay" aria-label="Play the song from this line">play</button>
+    </div>
+    <div class="ed-preview-words" id="edPreviewWords">Choose a line and it is shown here.</div>
   </div>
 
   <div class="ed-list" id="edList"></div>

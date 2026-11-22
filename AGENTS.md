@@ -103,6 +103,24 @@ exists for the node test and audit tooling.
     leaves the button or the window losing the pointer. The buttons sit under
     the bar of the player and over the line that says the song plays from this
     machine.
+24. **The track preview shows the line that is being worked on.** It sits under
+    the toolbar of the editor and carries the number of the line, the moment it
+    starts at, the moment it ends at and the words of it. The two moments are
+    written the way a subtitle file writes them, so what is on the screen is
+    exactly what the file will carry. It is drawn again every time a line
+    changes, so it follows the line as it is edited.
+25. **A line can be put above or under the line being worked on.** The toolbar
+    carries `Add a line`, `Add a line Up` and `Add a line Down`. The plain add
+    has no line to sit against, so it puts the line at the end of the list. Up
+    puts a line above the line that is chosen, and under puts one below it.
+    With no line chosen, up puts the line at the top of the list and under
+    puts it at the end. Alt and the arrow keys do the same two things.
+26. **One button starts and stops the song.** The button of the player shows
+    the state of the song and not the state of the last click, so the two can
+    never disagree. The space bar does the same thing, so the song can be
+    stopped without reaching for the mouse, but a box that is being typed into
+    keeps the space bar, because a space is a word there. The song carries on
+    from the moment it was paused at, so a pause is a pause and not a jump.
 
 ## The analysis rules that were bugs once
 
