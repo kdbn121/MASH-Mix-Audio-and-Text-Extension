@@ -18,10 +18,6 @@ to a vendor.
 
 ![The side panel with the measurements of a song](screenshots/panel-measurements.png)
 
-![The side panel with the lyrics of the song and the engine found](screenshots/panel-lyrics.png)
-
-![The side panel with the player under the lyrics button and the lyrics of a Bangla song](screenshots/panel-player.png)
-
 ![The side panel showing the steps for a new computer when the engine is not running](screenshots/panel-setup-guide.png)
 
 ## The demo
