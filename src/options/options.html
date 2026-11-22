@@ -92,6 +92,17 @@
   </div>
 
   <div class="card">
+    <label for="cloudEngines">Cloud engines (one per line)</label>
+    <textarea id="cloudEngines" rows="4" placeholder="https://your-cloud-engine.example.com&#10;https://another-engine.example.com" spellcheck="false"></textarea>
+    <p class="hint">
+      Optional cloud endpoints for lyrics/voice. The panel checks these after local ports.
+      Each must expose <code>/api/health</code> and <code>/api/lyrics</code>.
+    </p>
+    <button id="saveCloud">Save cloud engines</button>
+    <span class="saved" id="savedCloud"></span>
+  </div>
+
+  <div class="card">
     <h2>On a new computer</h2>
     <p class="hint">The extension measures a file on its own. The engine is only needed for the lyrics and the voice.</p>
     <ol class="steps">

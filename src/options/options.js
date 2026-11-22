@@ -12,6 +12,9 @@
   var saved = document.getElementById('saved');
   var test = document.getElementById('test');
   var tested = document.getElementById('tested');
+  var cloudField = document.getElementById('cloudEngines');
+  var cloudSave = document.getElementById('saveCloud');
+  var savedCloud = document.getElementById('savedCloud');
 
   var PROBE_TIMEOUT_MS = 2000;
 
@@ -36,8 +39,11 @@
 
   var area = store();
   if (area) {
-    area.get({ engine: DEFAULT_ENGINE }, function (values) {
+    area.get({ engine: DEFAULT_ENGINE, cloudEngines: [] }, function (values) {
       field.value = (values && values.engine) || DEFAULT_ENGINE;
+      if (cloudField && Array.isArray(values.cloudEngines)) {
+        cloudField.value = values.cloudEngines.join('\n');
+      }
     });
   } else {
     field.value = DEFAULT_ENGINE;
@@ -58,6 +64,23 @@
       saved.textContent = 'Saved';
     }
   });
+
+  if (cloudSave) {
+    cloudSave.addEventListener('click', function () {
+      var raw = String(cloudField.value || '').trim();
+      var urls = raw ? raw.split(/\r?\n/).map(function (u) {
+        return String(u).trim().replace(/\/+$/, '');
+      }).filter(function (u) { return u; }) : [];
+      if (area) {
+        area.set({ cloudEngines: urls }, function () {
+          savedCloud.textContent = 'Saved';
+          setTimeout(function () { savedCloud.textContent = ''; }, 2000);
+        });
+      } else {
+        savedCloud.textContent = 'Saved';
+      }
+    });
+  }
 
   /**
    * Ask the address whether an engine is there, and say what came back.

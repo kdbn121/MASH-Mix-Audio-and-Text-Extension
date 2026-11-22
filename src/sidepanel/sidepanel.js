@@ -20,12 +20,23 @@
   var FALLBACK_ENGINES = [
     'http://127.0.0.1:8000',
     'http://127.0.0.1:8001',
+    'http://127.0.0.1:8002',
+    'http://127.0.0.1:8003',
+    'http://127.0.0.1:8004',
+    'http://127.0.0.1:8005',
     'http://127.0.0.1:8080',
+    'http://127.0.0.1:8081',
     'http://127.0.0.1:8123',
-    'http://localhost:8000'
+    'http://127.0.0.1:8124',
+    'http://127.0.0.1:8125',
+    'http://127.0.0.1:9000',
+    'http://127.0.0.1:9001',
+    'http://localhost:8000',
+    'http://localhost:8080',
+    'http://localhost:8123'
   ];
 
-  var PROBE_TIMEOUT_MS = 1200;
+  var PROBE_TIMEOUT_MS = 800;
 
   var drop = document.getElementById('drop');
   var input = document.getElementById('file');
@@ -1091,7 +1102,8 @@
   /**
    * Find the engine. The saved address is asked first, then the ports an
    * engine is likely to sit on. An engine that was started on another port
-   * is found this way and the panel remembers it.
+   * is found this way and the panel remembers it. Also checks configured
+   * cloud endpoints.
    */
   async function findEngine() {
     var candidates = [];
@@ -1105,20 +1117,38 @@
     add(engineUrl);
     add(savedEngine);
     for (var i = 0; i < FALLBACK_ENGINES.length; i++) add(FALLBACK_ENGINES[i]);
-    for (var c = 0; c < candidates.length; c++) {
-      try {
-        var info = await probe(candidates[c]);
-        return { url: candidates[c], info: info };
-      } catch (err) {
-        // this address has no engine, the next one is tried
+
+    // Add cloud engines from storage
+    var cloudEngines = await getCloudEngines();
+    for (var j = 0; j < cloudEngines.length; j++) add(cloudEngines[j]);
+
+    // Probe in parallel batches for speed
+    var batchSize = 6;
+    for (var b = 0; b < candidates.length; b += batchSize) {
+      var batch = candidates.slice(b, b + batchSize);
+      var results = await Promise.allSettled(batch.map(probe));
+      for (var r = 0; r < results.length; r++) {
+        if (results[r].status === 'fulfilled') {
+          return { url: batch[r], info: results[r].value };
+        }
       }
     }
     return null;
   }
 
+  async function getCloudEngines() {
+    if (!globalThis.chrome || !chrome.storage) return [];
+    try {
+      var data = await chrome.storage.local.get(['cloudEngines']);
+      var engines = data.cloudEngines;
+      if (Array.isArray(engines) && engines.length) return engines;
+    } catch (e) {}
+    return [];
+  }
+
   async function checkEngine() {
     engineDot.className = 'dot';
-    engineText.textContent = 'Looking for the local engine';
+    engineText.textContent = 'Searching for engine (local + cloud)';
     engineHint.textContent = '';
     engineSetup.hidden = true;
     engineRetry.disabled = true;
@@ -1127,30 +1157,40 @@
       if (!found) throw new Error('no engine answered');
       engineUrl = found.url;
       engineDot.className = 'dot on';
-      engineText.textContent = 'Local engine ' + (found.info.version || '') + ' at ' + engineUrl;
+      var isCloud = found.url.indexOf('127.0.0.1') === -1 && found.url.indexOf('localhost') === -1;
+      engineText.textContent = (isCloud ? 'Cloud engine ' : 'Local engine ') + (found.info.version || '') + ' at ' + engineUrl;
       engineSetup.hidden = true;
       engineReady = true;
       updateLyricsButton();
       if (found.url !== savedEngine) {
-        // the engine answered on another address, so that one is kept
         savedEngine = found.url;
         if (globalThis.chrome && chrome.storage) {
           chrome.storage.local.set({ engine: found.url });
         }
-        engineHint.textContent = 'The engine answered on ' + found.url +
-          ', so that address is saved. The measurements work without it.';
+        engineHint.textContent = 'The engine answered on ' + found.url + ', so that address is saved. Measurements work without it.';
         engineHint.className = 'hint';
       }
     } catch (err) {
       engineDot.className = 'dot off';
-      engineText.textContent = 'The engine is not running';
-      engineHint.innerHTML = 'Start it with <code>mash-mix serve --host 127.0.0.1 --port 8000</code>, ' +
-        'then press <b>Check again</b>. The measurements of a file work without the engine, ' +
-        'only the lyrics and the voice need it.';
+      engineText.textContent = 'No engine found';
+      engineHint.innerHTML = 'Start the local engine: <code>mash-mix serve --host 127.0.0.1 --port 8000</code> ' +
+        'Or add a cloud engine URL in Options. Measurements work without the engine; only lyrics and voice need it.';
       engineHint.className = 'hint';
       engineSetup.hidden = false;
       engineReady = false;
       updateLyricsButton();
+
+      // Show and attach copy handler to static button
+      var copyBtn = document.getElementById('copyEngineCmd');
+      if (copyBtn) {
+        copyBtn.hidden = false;
+        copyBtn.onclick = function () {
+          navigator.clipboard.writeText('mash-mix serve --host 127.0.0.1 --port 8000');
+          var old = copyBtn.textContent;
+          copyBtn.textContent = 'Copied!';
+          setTimeout(function () { copyBtn.textContent = old; }, 1200);
+        };
+      }
     } finally {
       engineRetry.disabled = false;
     }
