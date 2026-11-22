@@ -4,7 +4,8 @@ The [MASH-Mix-Audio-and-Text](https://github.com/kdbn121/MASH-Mix-Audio-and-Text
 as a browser side panel. Drop in a song and the panel measures it: the peak,
 the loudness, the clipping, the dc offset, the silence at the head, the crest,
 and under **Own pitch and speed** the key of the song and its tempo. With the
-local engine running it writes the lyrics as well.
+local engine running it writes the lyrics as well, and you can fix them and
+cut them up in the editor that sits under the lyrics.
 
 **Nothing you attach leaves your machine.** The measurement happens in the
 browser, on your machine. The only thing that is ever sent anywhere is the file
@@ -16,9 +17,7 @@ the engine is the one that visits the site, the way any downloader does. The
 audio and the lyrics are written to this machine. Nothing about the song goes
 to a vendor.
 
-![The side panel with the measurements of a song](screenshots/panel-measurements.png)
-
-![The side panel showing the steps for a new computer when the engine is not running](screenshots/panel-setup-guide.png)
+![The flow of the panel: a song in, the measurement, the engine, the editor, and the files out](media/banner.png)
 
 ## The demo
 
@@ -29,12 +28,17 @@ and the edited file is saved.
 
 ![The side panel at work](media/panel-demo.gif)
 
-The same run as a video, with the sound of nothing and the same frames:
-[media/panel-demo.mp4](media/panel-demo.mp4).
+The same run as a video, cut short and in portrait:
+
+**[media/panel-demo.mp4](media/panel-demo.mp4)** (8.9 MB, 21 seconds)
 
 The pointer on the screen is drawn into the page for the recording, because a
 picture taken by a browser never carries the pointer of the mouse. Every click,
 every letter and every button in the demo is the real thing.
+
+![The side panel with the measurements of a song](screenshots/panel-measurements.png)
+
+![The side panel showing the steps for a new computer when the engine is not running](screenshots/panel-setup-guide.png)
 
 ## Install
 
