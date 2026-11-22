@@ -180,11 +180,11 @@ test('the player shows the time as minutes and seconds', () => {
   assert.match(script, /songTotal\.textContent = mmss\(/);
 });
 
-test('a lyric line carries the song to the moment it starts', () => {
+test('an editor line play button carries the song to the moment it starts', () => {
   const script = read('src/sidepanel/sidepanel.js');
-  assert.match(script, /ln-seek/);
-  assert.match(script, /seekSong\(at\)/);
-  assert.match(script, /lyricTimes/);
+  assert.match(script, /ed-play/);
+  assert.match(script, /function seekSong\(seconds\)/);
+  assert.match(script, /ed\.cueStart\(cues\[index\]\)/);
 });
 
 test('the panel can choose which model the engine uses', () => {
@@ -309,17 +309,20 @@ test('the script box is built by the panel and holds every script', () => {
   assert.match(panel, /<option value="auto" selected>Auto, any script<\/option>/);
 });
 
-test('the outcome of the run is at the foot of the panel', () => {
+test('the editor footer holds download speak copy actions', () => {
   const panel = read('src/sidepanel/sidepanel.html');
-  assert.match(panel, /id="outcome"/);
-  assert.match(panel, /id="outcomeText"/);
-  assert.match(panel, /id="outcomeCopy"/);
-  assert.match(panel, /id="outcomeDownload"/);
+  assert.match(panel, /id="edFooter"/);
+  assert.match(panel, /id="edDownloadSrtLink"/);
+  assert.match(panel, /id="edDownloadTxtLink"/);
+  assert.match(panel, /id="edDownloadVttLink"/);
+  assert.match(panel, /id="edDownloadLrcLink"/);
+  assert.match(panel, /id="edSpeak"/);
+  assert.match(panel, /id="edCopy"/);
   const script = read('src/sidepanel/sidepanel.js');
-  assert.match(script, /function copyOutcome\(\)/);
-  assert.match(script, /function downloadOutcome\(\)/);
+  assert.match(script, /function copyLyricsToClipboard\(\)/);
+  assert.match(script, /function speakLyrics\(\)/);
   assert.match(script, /navigator\.clipboard/);
-  assert.match(script, /new Blob\(\[text\]/);
+  assert.match(script, /speechSynthesis/);
 });
 
 test('a bar moves under the line that says what the engine is doing', () => {

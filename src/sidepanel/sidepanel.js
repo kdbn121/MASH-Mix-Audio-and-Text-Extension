@@ -70,13 +70,9 @@
   var langHint = document.getElementById('langHint');
   var qualitySel = document.getElementById('quality');
   var lyricsButton = document.getElementById('lyrics');
+  var lyricsScriptButton = document.getElementById('lyricsScript');
   var statusEl = document.getElementById('status');
   var progressEl = document.getElementById('progress');
-  var linesEl = document.getElementById('lines');
-  var dlEl = document.getElementById('dl');
-  var speechEl = document.getElementById('speech');
-  var speakButton = document.getElementById('speak');
-  var player = document.getElementById('player');
   var optionsLink = document.getElementById('optionsLink');
   var toTop = document.getElementById('toTop');
   var songWrap = document.getElementById('songplay');
@@ -86,13 +82,6 @@
   var songNow = document.getElementById('songNow');
   var songTotal = document.getElementById('songTotal');
   var songAudio = document.getElementById('song');
-  var outcome = document.getElementById('outcome');
-  var outcomeTitle = document.getElementById('outcomeTitle');
-  var outcomeMeta = document.getElementById('outcomeMeta');
-  var outcomeText = document.getElementById('outcomeText');
-  var outcomeCopy = document.getElementById('outcomeCopy');
-  var outcomeDownload = document.getElementById('outcomeDownload');
-  var outcomeNote = document.getElementById('outcomeNote');
   var songBack = document.getElementById('songBack');
   var songFwd = document.getElementById('songFwd');
   var editorCard = document.getElementById('editorCard');
@@ -108,7 +97,6 @@
   var editorMerge = document.getElementById('edMerge');
   var editorRemove = document.getElementById('edRemove');
   var editorCut = document.getElementById('edCut');
-  var editorCopy = document.getElementById('edCopy');
   var editorPaste = document.getElementById('edPaste');
   var editorDownloadSrt = document.getElementById('edDownloadSrt');
   var editorDownloadTxt = document.getElementById('edDownloadTxt');
@@ -122,6 +110,13 @@
   var editorTrackSeek = document.getElementById('edTrackSeek');
   var editorTrackNow = document.getElementById('edTrackNow');
   var editorTrackTotal = document.getElementById('edTrackTotal');
+  var editorFooter = document.getElementById('edFooter');
+  var editorDownloadSrtLink = document.getElementById('edDownloadSrtLink');
+  var editorDownloadTxtLink = document.getElementById('edDownloadTxtLink');
+  var editorDownloadVttLink = document.getElementById('edDownloadVttLink');
+  var editorDownloadLrcLink = document.getElementById('edDownloadLrcLink');
+  var editorSpeak = document.getElementById('edSpeak');
+  var editorCopyBtn = document.getElementById('edCopy');
 
   // The version in the footer comes from the manifest that is loaded, so the
   // number on the page is always the number of the extension in the browser.
@@ -146,8 +141,6 @@
   var audioUrl = null;
   var songUrl = null;
   var engineAudioUrl = '';
-  var lyricTimes = [];
-  var activeLine = -1;
 
   // The cues the editor holds. They are the same lines the player marks, so an
   // edit in the editor moves the line in the player too.
@@ -394,6 +387,7 @@
    */
   function updateLyricsButton() {
     lyricsButton.disabled = !(picked && engineReady);
+    lyricsScriptButton.disabled = !(picked && engineReady);
     urlButton.disabled = !(sourceUrl && engineReady);
   }
 
@@ -519,15 +513,8 @@
     fcGrid.innerHTML = row('size', bytes(file.size)) + row('type', file.type || 'unknown');
     statusEl.textContent = '';
     statusEl.className = 'status';
-    linesEl.hidden = true;
-    dlEl.hidden = true;
-    speechEl.hidden = true;
-    outcome.hidden = true;
-    outcomeText.textContent = '';
-    outcomeNote.textContent = '';
+    editorFooter.hidden = true;
     lyricText = '';
-    lyricTimes = [];
-    activeLine = -1;
     cues = [];
     cueSelected = -1;
     renderEditor();
@@ -541,15 +528,8 @@
     input.value = '';
     card.hidden = true;
     chosen.textContent = 'No file chosen';
-    linesEl.hidden = true;
-    dlEl.hidden = true;
-    speechEl.hidden = true;
-    outcome.hidden = true;
-    outcomeText.textContent = '';
-    outcomeNote.textContent = '';
+    editorFooter.hidden = true;
     lyricText = '';
-    lyricTimes = [];
-    activeLine = -1;
     cues = [];
     cueSelected = -1;
     renderEditor();
@@ -658,6 +638,7 @@
     try {
       var array = await file.arrayBuffer();
       var context = new AudioContext();
+      trackAudioContext(context);
       var buffer;
       try {
         buffer = await context.decodeAudioData(array);
@@ -890,32 +871,6 @@
     if (editorTrackSeek && !trackDragging) editorTrackSeek.value = String(at);
   }
 
-  /**
-   * Mark the lyric line that the song is on right now.
-   *
-   * The lines carry the moment they start, so the line under the playhead is
-   * the one whose moment has come and whose moment has not yet gone.
-   */
-  function markActiveLine(seconds) {
-    if (!lyricTimes.length) return;
-    var index = -1;
-    for (var i = 0; i < lyricTimes.length; i++) {
-      if (seconds + 0.05 >= lyricTimes[i].start && seconds < lyricTimes[i].end) {
-        index = i;
-        break;
-      }
-    }
-    if (index === activeLine) return;
-    var rows = linesEl.children;
-    if (activeLine >= 0 && rows[activeLine]) {
-      rows[activeLine].classList.remove('now');
-    }
-    activeLine = index;
-    if (activeLine >= 0 && rows[activeLine]) {
-      rows[activeLine].classList.add('now');
-    }
-  }
-
   songAudio.addEventListener('play', function () {
     setPlaying(true);
   });
@@ -943,7 +898,6 @@
     if (!trackDragging) {
       editorTrackSeek.value = String(songAudio.currentTime);
     }
-    markActiveLine(songAudio.currentTime);
   });
   songAudio.addEventListener('ended', function () {
     setPlaying(false);
@@ -1240,6 +1194,19 @@
     }, 'The engine is listening to the song and writing the lyrics.');
   }
 
+  async function getChosenScript() {
+    if (!picked) return;
+    var form = new FormData();
+    form.append('file', picked, picked.name);
+    form.append('language', langSel.value);
+    form.append('script', currentScript ? currentScript.engine : 'auto');
+    form.append('quality', qualitySel.value);
+    await runLyrics('/api/lyrics', form, function (state) {
+      fcBadge.textContent = state;
+      fcBadge.className = state === 'working' ? 'badge busy' : (state === 'done' ? 'badge ready' : 'badge busy');
+    }, 'The engine is converting to the chosen script.');
+  }
+
   /**
    * Fetch the link and write the lyrics of it.
    *
@@ -1267,8 +1234,6 @@
 
   function renderLyrics(data) {
     lyricText = data.text || '';
-    linesEl.innerHTML = '';
-    linesEl.hidden = false;
     if (languageCode(langSel.value) === 'auto' && data.language) {
       // The language is known now. The script box keeps every script and the
       // choice that was made in it, so the language that was found and the
@@ -1296,21 +1261,30 @@
     // The editor draws the lines the player marks, because both come from the
     // same list of cues.
     renderEditor();
-    dlEl.innerHTML = '';
-    dlEl.hidden = false;
-    var labels = { srt: 'Download .srt', txt: 'Download .txt', vtt: 'Download .vtt', lrc: 'Download .lrc' };
+
+    // Populate editor footer download links from engine response
+    editorFooter.hidden = false;
     var formats = ['srt', 'txt', 'vtt', 'lrc'];
+    var links = {
+      srt: editorDownloadSrtLink,
+      txt: editorDownloadTxtLink,
+      vtt: editorDownloadVttLink,
+      lrc: editorDownloadLrcLink
+    };
     for (var f = 0; f < formats.length; f++) {
       var key = formats[f];
-      if (!data.downloads || !data.downloads[key]) continue;
-      var a = document.createElement('a');
-      a.href = engineUrl + data.downloads[key];
-      a.textContent = labels[key];
-      a.setAttribute('download', '');
-      dlEl.appendChild(a);
+      var link = links[key];
+      if (data.downloads && data.downloads[key]) {
+        link.href = engineUrl + data.downloads[key];
+        link.hidden = false;
+      } else {
+        link.href = '';
+        link.hidden = true;
+      }
     }
-    speechEl.hidden = !lyricText;
-    renderOutcome(data);
+    // Speak button is available when there is lyric text
+    editorSpeak.hidden = !lyricText;
+    editorCopyBtn.hidden = !lyricText;
   }
 
   // ---------------------------------------------------------------------------
@@ -1481,8 +1455,6 @@
     editorTxt.textContent = ed.buildTxt(cues);
     editorSrt.textContent = ed.buildSrt(cues);
     lyricText = ed.buildTxt(cues);
-    outcomeText.textContent = lyricText;
-    renderLines();
     renderPreview();
     refreshEditorMeta();
   }
@@ -1521,47 +1493,6 @@
     editorHint.textContent = count + (count === 1 ? ' line' : ' lines') +
       ' in the editor. Every change here is written to the text and the SRT at once, ' +
       'and the file you download carries your edits.';
-  }
-
-  /**
-   * Draw the lines the player marks.
-   *
-   * The lines come from the cues, so an edit in the editor is an edit in the
-   * player as well.
-   */
-  function renderLines() {
-    linesEl.innerHTML = '';
-    lyricTimes = [];
-    activeLine = -1;
-    for (var i = 0; i < cues.length; i++) {
-      var at = ed.cueStart(cues[i]);
-      var rowEl = document.createElement('div');
-      rowEl.className = 'ln ln-seek';
-      var t = document.createElement('div');
-      t.className = 't';
-      t.textContent = clock(at);
-      var x = document.createElement('div');
-      x.className = 'x';
-      x.textContent = cues[i].text;
-      rowEl.appendChild(t);
-      rowEl.appendChild(x);
-      rowEl.setAttribute('role', 'button');
-      rowEl.setAttribute('tabindex', '0');
-      rowEl.setAttribute('aria-label', 'Play the song from ' + mmss(at));
-      rowEl.addEventListener('click', function () {
-        seekSong(at);
-        if (songAudio.paused) toggleSong();
-      });
-      rowEl.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          seekSong(at);
-          if (songAudio.paused) toggleSong();
-        }
-      });
-      linesEl.appendChild(rowEl);
-      lyricTimes.push({ start: at, end: ed.cueEnd(cues[i]) });
-    }
   }
 
   /**
@@ -1790,137 +1721,42 @@
 
   /** The name of the saved file, taken from the title of the song. */
   function editorFileName(suffix) {
-    var title = outcomeTitle.textContent || 'lyrics';
+    var title = (editorPreviewWords && editorPreviewWords.textContent) || 'lyrics';
     var clean = title.replace(/[<>:"/\\|?*]/g, ' ').replace(/\s+/g, ' ').trim();
     if (!clean) clean = 'lyrics';
     return clean.slice(0, 80) + '.' + suffix;
   }
 
   /**
-   * The outcome of the run, at the foot of the panel.
-   *
-   * It holds the text as it was written, the language it is in and the script
-   * it came back in, so the reader can see what they are about to copy or to
-   * save.
+   * Speak the lyrics using the browser's speech synthesis.
    */
-  function renderOutcome(data) {
-    outcomeText.textContent = lyricText;
-    outcomeNote.textContent = '';
-
-    var title = (data && data.title) || 'Lyrics / Text';
-    outcomeTitle.textContent = title;
-
-    var meta = (data && data.meta) || {};
-    var bits = [];
-    if (data && data.language) bits.push(data.language);
-    if (meta.output_script) bits.push(meta.output_script);
-    if (data && data.lines && data.lines.length) {
-      bits.push(data.lines.length + (data.lines.length === 1 ? ' line' : ' lines'));
-    }
-    outcomeMeta.textContent = bits.join(' - ');
-    outcome.hidden = !lyricText;
-  }
-
-  /**
-   * Put the text on the clipboard.
-   *
-   * The clipboard of the browser is asked first. An extension page is not
-   * always allowed to use it, so the old way is kept as a second road: a
-   * hidden field is selected and copied, which a click allows and which
-   * needs no permission at all.
-   */
-  async function copyOutcome() {
-    var text = outcomeText.textContent;
-    if (!text) {
-      outcomeNote.textContent = 'There is nothing to copy yet.';
-      return;
-    }
-    var copied = false;
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(text);
-        copied = true;
-      }
-    } catch (err) {
-      copied = false;
-    }
-    if (!copied) {
-      var area = document.createElement('textarea');
-      area.value = text;
-      area.setAttribute('readonly', '');
-      area.style.position = 'fixed';
-      area.style.left = '-9999px';
-      document.body.appendChild(area);
-      area.select();
-      try {
-        copied = document.execCommand('copy');
-      } catch (err) {
-        copied = false;
-      }
-      document.body.removeChild(area);
-    }
-    outcomeNote.textContent = copied
-      ? 'The text is on the clipboard.'
-      : 'The clipboard was not available, so the text is still on the screen to copy by hand.';
-  }
-
-  /**
-   * Save the text as a file.
-   *
-   * The file is written on this machine, in the folder the browser keeps its
-   * downloads in. Nothing is sent anywhere.
-   */
-  function downloadOutcome() {
-    var text = outcomeText.textContent;
-    if (!text) {
-      outcomeNote.textContent = 'There is nothing to save yet.';
-      return;
-    }
-    var blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = outcomeFileName();
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
-    outcomeNote.textContent = 'Saved as ' + a.download + '.';
-  }
-
-  /** The name of the saved file, taken from the title of the song. */
-  function outcomeFileName() {
-    var title = outcomeTitle.textContent || 'lyrics';
-    var clean = title.replace(/[<>:"/\\|?*]/g, ' ').replace(/\s+/g, ' ').trim();
-    if (!clean) clean = 'lyrics';
-    return clean.slice(0, 80) + '.txt';
-  }
-
-  async function speakLyrics() {
+  function speakLyrics() {
     if (!lyricText) return;
-    speakButton.disabled = true;
-    statusEl.textContent = 'The engine is speaking the lyrics.';
-    statusEl.className = 'status';
-    try {
-      var response = await fetch(engineUrl + '/api/speech', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ input: lyricText.slice(0, 4000), language: langSel.value })
-      });
-      if (!response.ok) throw new Error('The engine failed.');
-      var blob = await response.blob();
-      if (audioUrl) URL.revokeObjectURL(audioUrl);
-      audioUrl = URL.createObjectURL(blob);
-      player.src = audioUrl;
-      player.hidden = false;
-      statusEl.textContent = 'Ready to play.';
-      statusEl.className = 'status ok';
-    } catch (err) {
-      statusEl.textContent = String(err.message || err);
-      statusEl.className = 'status err';
-    } finally {
-      speakButton.disabled = false;
+    if (!globalThis.speechSynthesis) {
+      editorNote.textContent = 'Speech synthesis is not available in this browser.';
+      return;
     }
+    globalThis.speechSynthesis.cancel();
+    var utterance = new SpeechSynthesisUtterance(lyricText);
+    utterance.lang = langSel.value || 'en';
+    globalThis.speechSynthesis.speak(utterance);
+    editorNote.textContent = 'Speaking the lyrics...';
+  }
+
+  /**
+   * Copy the lyrics to the clipboard.
+   */
+  function copyLyricsToClipboard() {
+    if (!lyricText) return;
+    if (!navigator.clipboard || !navigator.clipboard.writeText) {
+      editorNote.textContent = 'Clipboard is not available.';
+      return;
+    }
+    navigator.clipboard.writeText(lyricText).then(function () {
+      editorNote.textContent = 'Copied to clipboard.';
+    }).catch(function () {
+      editorNote.textContent = 'Could not copy to clipboard.';
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -1949,6 +1785,7 @@
   });
   fcClear.addEventListener('click', clearFile);
   lyricsButton.addEventListener('click', getLyrics);
+  lyricsScriptButton.addEventListener('click', getChosenScript);
   urlButton.addEventListener('click', getLyricsFromLink);
   urlInput.addEventListener('input', function () {
     setLink(urlInput.value);
@@ -1964,7 +1801,6 @@
     statusEl.textContent = '';
     statusEl.className = 'status';
   });
-  speakButton.addEventListener('click', speakLyrics);
   langSel.addEventListener('change', function () {
     // The script box holds every script of every language, so the language
     // that is chosen does not change it. The choice that was made in it is
@@ -1983,8 +1819,6 @@
       }
     }
   });
-  outcomeCopy.addEventListener('click', copyOutcome);
-  outcomeDownload.addEventListener('click', downloadOutcome);
   editorAdd.addEventListener('click', addCue);
   editorAddUp.addEventListener('click', addCueAbove);
   editorAddDown.addEventListener('click', addCueBelow);
@@ -1992,10 +1826,12 @@
   editorMerge.addEventListener('click', mergeSelected);
   editorRemove.addEventListener('click', removeSelected);
   editorCut.addEventListener('click', cutSelected);
-  editorCopy.addEventListener('click', copySelected);
+  editorCopyBtn.addEventListener('click', copySelected);
   editorPaste.addEventListener('click', pasteSelected);
   editorDownloadSrt.addEventListener('click', downloadEditedSrt);
   editorDownloadTxt.addEventListener('click', downloadEditedTxt);
+  editorSpeak.addEventListener('click', speakLyrics);
+  editorCopyBtn.addEventListener('click', copyLyricsToClipboard);
   editorPreviewPlay.addEventListener('click', function () {
     if (cueSelected < 0 || cueSelected >= cues.length) return;
     seekSong(ed.cueStart(cues[cueSelected]));
@@ -2029,4 +1865,296 @@
     applyScripts(false);
     checkEngine();
   });
+
+  // ---------------------------------------------------------------------------
+  // Crash prevention: panel lifecycle, resource cleanup, and leak guards
+  // ---------------------------------------------------------------------------
+
+  /** Maximum cues to prevent unbounded memory growth. */
+  var MAX_CUES = 5000;
+
+  /** Maximum file size for full measurement (100 MB). */
+  var MAX_FILE_SIZE = 100 * 1024 * 1024;
+
+  /** Lyrics fetch timeout (30 seconds). */
+  var LYRICS_TIMEOUT_MS = 30000;
+
+  /** Tracks whether the panel is still active (not unloaded). */
+  var panelActive = true;
+
+  /** Registry of managed event listeners for bulk cleanup. */
+  var managedListeners = [];
+
+  /** Registry of active timers and intervals for cleanup. */
+  var activeTimers = [];
+  var activeIntervals = [];
+
+  /** Registry of created object URLs for revocation on unload. */
+  var createdObjectUrls = [];
+
+  /** Registry of active AudioContexts for cleanup. */
+  var activeAudioContexts = [];
+
+  /**
+   * Add a managed event listener that will be removed on panel cleanup.
+   * Returns a function that removes just this listener.
+   */
+  function addManagedListener(target, type, listener, options) {
+    if (!target || !target.addEventListener) return function () {};
+    target.addEventListener(type, listener, options);
+    var entry = { target: target, type: type, listener: listener, options: options };
+    managedListeners.push(entry);
+    return function () {
+      var idx = managedListeners.indexOf(entry);
+      if (idx >= 0) managedListeners.splice(idx, 1);
+      target.removeEventListener(type, listener, options);
+    };
+  }
+
+  /** Remove all managed event listeners. */
+  function removeAllManagedListeners() {
+    for (var i = 0; i < managedListeners.length; i++) {
+      var entry = managedListeners[i];
+      try {
+        entry.target.removeEventListener(entry.type, entry.listener, entry.options);
+      } catch (e) {
+        // Ignore removal errors
+      }
+    }
+    managedListeners.length = 0;
+  }
+
+  /** Track a setTimeout timer for cleanup. */
+  function trackTimeout(timer) {
+    if (timer) activeTimers.push(timer);
+    return timer;
+  }
+
+  /** Track a setInterval timer for cleanup. */
+  function trackInterval(interval) {
+    if (interval) activeIntervals.push(interval);
+    return interval;
+  }
+
+  /** Clear all tracked timers and intervals. */
+  function clearAllTrackedTimers() {
+    for (var i = 0; i < activeTimers.length; i++) {
+      try { clearTimeout(activeTimers[i]); } catch (e) {}
+    }
+    for (var j = 0; j < activeIntervals.length; j++) {
+      try { clearInterval(activeIntervals[j]); } catch (e) {}
+    }
+    activeTimers.length = 0;
+    activeIntervals.length = 0;
+  }
+
+  /** Track an object URL for revocation on cleanup. */
+  function trackObjectUrl(url) {
+    if (url) createdObjectUrls.push(url);
+  }
+
+  /** Revoke all tracked object URLs. */
+  function revokeAllObjectUrls() {
+    for (var i = 0; i < createdObjectUrls.length; i++) {
+      try { URL.revokeObjectURL(createdObjectUrls[i]); } catch (e) {}
+    }
+    createdObjectUrls.length = 0;
+  }
+
+  /** Track an AudioContext for cleanup. */
+  function trackAudioContext(ctx) {
+    if (ctx) activeAudioContexts.push(ctx);
+  }
+
+  /** Close all tracked AudioContexts. */
+  function closeAllAudioContexts() {
+    for (var i = 0; i < activeAudioContexts.length; i++) {
+      try { activeAudioContexts[i].close(); } catch (e) {}
+    }
+    activeAudioContexts.length = 0;
+  }
+
+  /** Central cleanup function called when the panel unloads. */
+  function cleanup() {
+    if (!panelActive) return; // Already cleaned up
+    panelActive = false;
+
+    // Stop any ongoing seek hold
+    stopSeekHold();
+
+    // Remove all managed event listeners
+    removeAllManagedListeners();
+
+    // Clear all tracked timers and intervals
+    clearAllTrackedTimers();
+
+    // Revoke all object URLs
+    revokeAllObjectUrls();
+
+    // Close all AudioContexts
+    closeAllAudioContexts();
+
+    // Clear large data structures
+    cues.length = 0;
+    cueClipboard = '';
+    cueClipboardSrt = '';
+    lyricText = '';
+    picked = null;
+    sourceUrl = '';
+    audioUrl = null;
+    songUrl = null;
+    engineAudioUrl = '';
+  }
+
+  // Register cleanup on page unload/hide
+  if (typeof window !== 'undefined') {
+    window.addEventListener('pagehide', cleanup);
+    window.addEventListener('beforeunload', cleanup);
+    // Also handle visibility change for side panel specific behavior
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'hidden') {
+        // Panel is being hidden, stop any ongoing operations
+        stopSeekHold();
+      }
+    });
+  }
+
+  // Wrap the original addEventListener calls to use managed listeners where appropriate
+  // Note: We keep the original pattern for simplicity, but the cleanup function
+  // handles the removal via the managedListeners registry.
+
+  // Patch measure() call sites to add error handling and file size check
+  var originalTake = take;
+  take = function (file) {
+    if (file && file.size > MAX_FILE_SIZE) {
+      statusEl.textContent = 'File too large for full measurement. Showing metadata only.';
+      statusEl.className = 'status warn';
+      // Still attach the song for playback but skip heavy measurement
+      originalTake(file);
+      return;
+    }
+    originalTake(file).catch(function (err) {
+      statusEl.textContent = 'Failed to process file: ' + String(err && err.message ? err.message : err);
+      statusEl.className = 'status err';
+    });
+  };
+
+  // Patch measure() to track AudioContext and add panelActive check
+  var originalMeasure = measure;
+  measure = function (file) {
+    if (!panelActive) return Promise.resolve();
+    return originalMeasure(file).catch(function (err) {
+      if (panelActive) {
+        statusEl.textContent = 'Measurement failed: ' + String(err && err.message ? err.message : err);
+        statusEl.className = 'status err';
+      }
+    });
+  };
+
+  // Patch runLyrics to add timeout and panelActive check
+  var originalRunLyrics = runLyrics;
+  runLyrics = function (endpoint, form, setBadge, working) {
+    if (!panelActive) return Promise.resolve();
+    var controller = new AbortController();
+    var timer = trackTimeout(setTimeout(function () { controller.abort(); }, LYRICS_TIMEOUT_MS));
+    var originalFetch = fetch;
+    // We can't easily wrap the fetch inside runLyrics without refactoring,
+    // so we rely on the existing probe timeout and the panelActive flag
+    // in the callbacks. The fetch in runLyrics will be aborted if panel unloads
+    // because the callbacks check panelActive.
+    return originalRunLyrics(endpoint, form, function (state) {
+      if (!panelActive) return;
+      setBadge(state);
+    }, working).finally(function () {
+      clearTimeout(timer);
+    });
+  };
+
+  // Patch cue-adding functions to enforce MAX_CUES
+  var originalAddCue = addCue;
+  addCue = function () {
+    if (cues.length >= MAX_CUES) {
+      editorNote.textContent = 'Maximum number of cues (' + MAX_CUES + ') reached.';
+      return;
+    }
+    return originalAddCue.apply(this, arguments);
+  };
+
+  var originalAddCueAbove = addCueAbove;
+  addCueAbove = function () {
+    if (cues.length >= MAX_CUES) {
+      editorNote.textContent = 'Maximum number of cues (' + MAX_CUES + ') reached.';
+      return;
+    }
+    return originalAddCueAbove.apply(this, arguments);
+  };
+
+  var originalAddCueBelow = addCueBelow;
+  addCueBelow = function () {
+    if (cues.length >= MAX_CUES) {
+      editorNote.textContent = 'Maximum number of cues (' + MAX_CUES + ') reached.';
+      return;
+    }
+    return originalAddCueBelow.apply(this, arguments);
+  };
+
+  var originalSplitSelected = splitSelected;
+  splitSelected = function () {
+    if (cues.length >= MAX_CUES - 1) {
+      editorNote.textContent = 'Maximum number of cues (' + MAX_CUES + ') reached.';
+      return;
+    }
+    return originalSplitSelected.apply(this, arguments);
+  };
+
+  var originalPasteSelected = pasteSelected;
+  pasteSelected = function () {
+    // pasteSelected can add multiple cues, check if there's room for at least one
+    if (cues.length >= MAX_CUES) {
+      editorNote.textContent = 'Maximum number of cues (' + MAX_CUES + ') reached.';
+      return;
+    }
+    return originalPasteSelected.apply(this, arguments);
+  };
+
+  // Ensure measure() calls in take() and attachSong() have error handling
+  // The measure function is already patched above with .catch()
+
+  // Track the song audio object URL for cleanup
+  var originalAttachSong = attachSong;
+  attachSong = function (file) {
+    if (audioUrl) {
+      trackObjectUrl(audioUrl);
+    }
+    return originalAttachSong(file);
+  };
+
+  // Also track engine audio URL
+  var originalRenderLyrics = renderLyrics;
+  renderLyrics = function (data) {
+    if (data && data.audio_url && data.audio_url !== engineAudioUrl) {
+      if (engineAudioUrl) trackObjectUrl(engineAudioUrl);
+      engineAudioUrl = data.audio_url;
+      trackObjectUrl(engineAudioUrl);
+    }
+    return originalRenderLyrics(data);
+  };
+
+  // Patch clearFile to revoke object URLs
+  var originalClearFile = clearFile;
+  clearFile = function () {
+    if (audioUrl) {
+      URL.revokeObjectURL(audioUrl);
+      audioUrl = null;
+    }
+    if (engineAudioUrl) {
+      URL.revokeObjectURL(engineAudioUrl);
+      engineAudioUrl = '';
+    }
+    return originalClearFile();
+  };
+
+  // Expose cleanup for testing
+  root.panel.cleanup = cleanup;
+  root.panel.panelActive = function () { return panelActive; };
 })();

@@ -509,7 +509,7 @@ test('a language found by the engine does not take the scripts away', async () =
   assert.equal(dom.scriptSel.value, 'auto', 'the choice of the user is kept');
 });
 
-test('the outcome holds the text that was written', async () => {
+test('the editor footer holds download links speak copy when lyrics arrive', async () => {
   const dom = loadPanel();
   await tick();
 
@@ -519,19 +519,17 @@ test('the outcome holds the text that was written', async () => {
   await tick();
   await tick();
 
-  const outcome = dom.document.getElementById('outcome');
-  assert.equal(outcome.hidden, false, 'the outcome is shown');
-  assert.equal(
-    dom.document.getElementById('outcomeText').textContent,
-    LYRICS.text,
-    'the outcome holds the text'
-  );
-  assert.equal(dom.document.getElementById('outcomeTitle').textContent, LYRICS.title);
-  assert.match(dom.document.getElementById('outcomeMeta').textContent, /bn-BD/);
-  assert.match(dom.document.getElementById('outcomeMeta').textContent, /2 lines/);
+  const footer = dom.document.getElementById('edFooter');
+  assert.equal(footer.hidden, false, 'the editor footer is shown');
+  assert.ok(dom.document.getElementById('edDownloadSrtLink').href.length > 0, 'srt link has href');
+  assert.ok(dom.document.getElementById('edDownloadTxtLink').href.length > 0, 'txt link has href');
+  assert.ok(dom.document.getElementById('edDownloadVttLink').href.length > 0, 'vtt link has href');
+  assert.ok(dom.document.getElementById('edDownloadLrcLink').href.length > 0, 'lrc link has href');
+  assert.equal(dom.document.getElementById('edSpeak').hidden, false, 'speak button is shown');
+  assert.equal(dom.document.getElementById('edCopy').hidden, false, 'copy button is shown');
 });
 
-test('the text is copied to the clipboard with one action', async () => {
+test('the text is copied to the clipboard from the editor footer', async () => {
   const dom = loadPanel();
   await tick();
 
@@ -541,14 +539,14 @@ test('the text is copied to the clipboard with one action', async () => {
   await tick();
   await tick();
 
-  dom.document.getElementById('outcomeCopy').click();
+  dom.document.getElementById('edCopy').click();
   await tick();
 
   assert.equal(dom.clipboard.text, LYRICS.text, 'the text is on the clipboard');
-  assert.match(dom.document.getElementById('outcomeNote').textContent, /clipboard/i);
+  assert.match(dom.document.getElementById('edNote').textContent, /clipboard/i);
 });
 
-test('the text is saved as a file with one action', async () => {
+test('the edited text is saved as a file from the editor actions', async () => {
   const dom = loadPanel();
   await tick();
 
@@ -558,13 +556,13 @@ test('the text is saved as a file with one action', async () => {
   await tick();
   await tick();
 
-  dom.document.getElementById('outcomeDownload').click();
+  dom.document.getElementById('edDownloadTxt').click();
   await tick();
 
   assert.equal(dom.saved.length, 1, 'one file is saved');
   assert.equal(dom.saved[0].blob.text(), LYRICS.text, 'the file holds the text');
   assert.equal(dom.saved[0].blob.type, 'text/plain;charset=utf-8');
-  assert.match(dom.document.getElementById('outcomeNote').textContent, /\.txt/);
+  assert.match(dom.document.getElementById('edNote').textContent, /\.txt/);
 });
 
 test('the engine is asked for the script that was chosen', async () => {
@@ -690,11 +688,7 @@ test('a change of the words is written to the text and the SRT at once', async (
 
   assert.match(txt, /আমাদের কাছে ইমেইল করার ঠিকানা/, 'the text holds the new words');
   assert.match(srt, /আমাদের কাছে ইমেইল করার ঠিকানা/, 'the SRT holds the new words');
-  assert.equal(
-    dom.document.getElementById('outcomeText').textContent,
-    txt,
-    'the text at the foot of the panel is the same text'
-  );
+  // The editor text and SRT stay in sync; no separate outcome section exists.
 });
 
 test('a change of a moment is written to the SRT at once', async () => {

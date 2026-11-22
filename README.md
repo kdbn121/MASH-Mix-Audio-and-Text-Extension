@@ -392,4 +392,4 @@ own machine, and there is no analytics anywhere in it.
 
 ## Licence
 
-MIT. MASH-Mix-Audio-and-Text-Extension V1.9.0. Copyright (c) 2026 MASH (Khaled Bhuiyan).
+MIT. MASH-Mix-Audio-and-Text-Extension V1.9.2. Copyright (c) 2026 MASH (Khaled Bhuiyan).

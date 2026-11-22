@@ -184,7 +184,10 @@
       <option value="fast">Fast, the quick one</option>
     </select>
   </label>
-  <button id="lyrics" disabled>Get the Lyrics / Text</button>
+  <div class="lyrics-buttons">
+    <button id="lyrics" disabled>Get the Lyrics / Text</button>
+    <button id="lyricsScript" class="ghost" disabled>Get the chosen script</button>
+  </div>
   <div class="status" id="status" role="status" aria-live="polite"></div>
   <div class="progress" id="progress" role="progressbar" aria-label="The engine is working" hidden>
     <div class="progress-bar"></div>
@@ -231,26 +234,6 @@
     </div>
     <div class="sp-hint" id="songHint">The song plays from this machine. Nothing is sent anywhere.</div>
     <audio id="song" preload="metadata"></audio>
-  </div>
-
-  <div class="lines" id="lines" hidden></div>
-  <div class="dl" id="dl" hidden></div>
-  <div class="speech" id="speech" hidden>
-    <button type="button" class="ghost" id="speak">Speak the lyrics</button>
-    <audio id="player" controls hidden></audio>
-  </div>
-
-  <div class="outcome" id="outcome" hidden>
-    <div class="oc-top">
-      <span class="oc-title" id="outcomeTitle">Lyrics / Text</span>
-      <span class="oc-meta" id="outcomeMeta"></span>
-    </div>
-    <pre class="oc-text" id="outcomeText"></pre>
-    <div class="oc-actions">
-      <button type="button" class="ghost" id="outcomeCopy">Copy to clipboard</button>
-      <button type="button" class="ghost" id="outcomeDownload">Download .txt</button>
-    </div>
-    <div class="oc-note" id="outcomeNote"></div>
   </div>
 </section>
 
@@ -305,14 +288,28 @@
   </div>
 
   <div class="ed-actions">
-    <button type="button" id="edDownloadSrt">Download the edited .srt</button>
-    <button type="button" class="ghost" id="edDownloadTxt">Download the edited .txt</button>
+    <button type="button" id="edDownloadTxt">Download the edited .txt</button>
+    <button type="button" class="ghost" id="edDownloadSrt">Download the edited .srt</button>
   </div>
+
+  <div class="ed-footer" id="edFooter" hidden>
+    <div class="ed-footer-row">
+      <a id="edDownloadSrtLink" class="ghost" download>Download .srt</a>
+      <a id="edDownloadTxtLink" class="ghost" download>Download .txt</a>
+      <a id="edDownloadVttLink" class="ghost" download>Download .vtt</a>
+      <a id="edDownloadLrcLink" class="ghost" download>Download .lrc</a>
+    </div>
+    <div class="ed-footer-row">
+      <button type="button" class="ghost" id="edSpeak">Speak the lyrics</button>
+      <button type="button" class="ghost" id="edCopy">Copy to clipboard</button>
+    </div>
+  </div>
+
   <p class="ed-note" id="edNote"></p>
 </section>
 
 <footer>
-  <span class="licence">MASH-Mix-Audio-and-Text-Extension <span id="licenceVersion">V1.9.0</span>. Copyright (c) 2026 MASH (Khaled Bhuiyan). MIT Licence.</span>
+  <span class="licence">MASH-Mix-Audio-and-Text-Extension <span id="licenceVersion">V1.9.2</span>. Copyright (c) 2026 MASH (Khaled Bhuiyan). MIT Licence.</span>
   <span class="licence"><a id="optionsLink" href="#">Engine settings</a></span>
   <span class="licence"><button type="button" class="to-top" id="toTop" aria-label="Go back to the top of the panel">Back to top</button></span>
 </footer>
