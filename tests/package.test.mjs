@@ -378,3 +378,28 @@ test('every element the panel reaches for is in the page', () => {
     assert.match(panel, new RegExp(`id="${name}"`), name);
   }
 });
+
+test('the footer of every page shows the release number of the extension', () => {
+  const wanted = `MASH-Mix-Audio-and-Text-Extension V${manifest.version}`;
+  for (const page of ['src/sidepanel/sidepanel.html', 'src/options/options.html']) {
+    // The page is read as the browser shows it, with the tags taken out.
+    const shown = read(page).replace(/<[^>]+>/g, '');
+    assert.ok(shown.includes(wanted), `${page} shows ${wanted}`);
+    assert.match(read(page), /id="licenceVersion"/, page);
+  }
+});
+
+test('the footer of the extension never shows the number of the engine', () => {
+  for (const page of ['src/sidepanel/sidepanel.html', 'src/options/options.html']) {
+    const html = read(page);
+    assert.doesNotMatch(html, /MASH-Mix-Audio-and-Text\. Copyright/, page);
+  }
+});
+
+test('the readme of the extension carries the release number', () => {
+  const readme = read('README.md');
+  assert.ok(
+    readme.includes(`MASH-Mix-Audio-and-Text-Extension V${manifest.version}`),
+    `the readme shows V${manifest.version}`
+  );
+});

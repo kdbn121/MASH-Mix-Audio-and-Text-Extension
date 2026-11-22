@@ -144,6 +144,18 @@ check(/Copyright \(c\) 2026 MASH \(Khaled Bhuiyan\)/.test(licence), 'the licence
 const privacy = readFileSync(join(ROOT, 'PRIVACY.md'), 'utf8');
 check(/leaves your machine/i.test(privacy), 'the privacy note says that nothing leaves the machine');
 
+// the footer of every page carries the number of the release
+for (const page of ['src/sidepanel/sidepanel.html', 'src/options/options.html']) {
+  const html = readFileSync(join(ROOT, page), 'utf8');
+  // The page is read as the browser shows it, with the tags taken out.
+  const shown = html.replace(/<[^>]+>/g, '');
+  check(
+    shown.includes(`MASH-Mix-Audio-and-Text-Extension V${manifest.version}`),
+    `${page} carries the number of the release`
+  );
+  check(/id="licenceVersion"/.test(html), `${page} has a place for the number`);
+}
+
 // the icons
 for (const size of [16, 32, 48, 128]) {
   check(

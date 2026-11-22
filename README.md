@@ -44,11 +44,16 @@ every letter and every button in the demo is the real thing.
 
 The extension is plain Manifest V3 and it has no build step.
 
-1. Clone or download this repository.
-2. Open `chrome://extensions` in Chrome or Edge.
-3. Turn on **Developer mode**.
-4. Press **Load unpacked** and pick the folder of this repository.
-5. Press the MASH-Mix button in the toolbar. The panel opens on the right.
+1. Download the archive of the release you want. The name of the archive carries
+   the number of the release, for example
+   `MASH-Mix-Audio-and-Text-Extension-KDBN-v1.8.1-version-in-the-footer.zip`, and
+   that number is the number in the footer of the panel.
+2. Unzip it. The archive holds the files of the extension at its root, so the
+   folder it makes is the folder to load.
+3. Open `chrome://extensions` in Chrome or Edge.
+4. Turn on **Developer mode**.
+5. Press **Load unpacked** and pick the folder that holds `manifest.json`.
+6. Press the MASH-Mix button in the toolbar. The panel opens on the right.
 
 Chrome 114 or newer is needed for the side panel. Edge works the same way.
 
@@ -387,4 +392,4 @@ own machine, and there is no analytics anywhere in it.
 
 ## Licence
 
-MIT. Copyright (c) 2026 MASH (Khaled Bhuiyan).
+MIT. MASH-Mix-Audio-and-Text-Extension V1.8.1. Copyright (c) 2026 MASH (Khaled Bhuiyan).

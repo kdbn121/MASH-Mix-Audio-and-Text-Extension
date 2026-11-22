@@ -121,6 +121,11 @@ exists for the node test and audit tooling.
     stopped without reaching for the mouse, but a box that is being typed into
     keeps the space bar, because a space is a word there. The song carries on
     from the moment it was paused at, so a pause is a pause and not a jump.
+27. **The footer of the page carries the number of the extension.** The name of
+    the repository comes first and the release number after it, so the page and
+    the file that was unpacked always say the same number. The panel reads the
+    number from the manifest that is loaded, so a page opened outside the
+    browser keeps the number written into the page.
 
 ## The analysis rules that were bugs once
 
@@ -185,8 +190,10 @@ song and check that the panel shows the same numbers as
 ## Packaging
 
 Every release is a new version number and a new file name:
-`MASH-Mix-Audio-and-Text-Extension-KDBN-v<n>-<change>.zip` in the workspace
-root. Old zips stay on disk.
+`MASH-Mix-Audio-and-Text-Extension-KDBN-v<version>-<change>.zip` in the workspace
+root. The number in the name of the file is the release number itself, so the
+file and the number in the footer of the panel are always the same number. Old
+zips stay on disk.
 
 The release number lives in two places and they must agree: `manifest.json`
 and `package.json`.

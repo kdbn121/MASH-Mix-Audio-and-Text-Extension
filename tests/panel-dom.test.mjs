@@ -327,6 +327,18 @@ function loadPanel(options) {
   sandbox.globalThis = sandbox;
   sandbox.self = sandbox;
 
+  // The browser can be told which extension is loaded, so the panel can show
+  // the number of that extension in its footer.
+  if (settings.chromeVersion) {
+    sandbox.chrome = {
+      runtime: {
+        getManifest() {
+          return { version: settings.chromeVersion };
+        }
+      }
+    };
+  }
+
   const context = vm.createContext(sandbox);
   // The editor is loaded first, because the panel reads its rules from there.
   vm.runInContext(EDITOR, context, { filename: 'editor.js' });
@@ -1041,4 +1053,24 @@ test('the keys of the editor put a line above and under', async () => {
     preventDefault() {}
   });
   assert.equal(editorRows(dom).length, 4, 'a line was added under');
+});
+
+test('the footer of the panel shows the version of the extension that is loaded', () => {
+  const dom = loadPanel({ chromeVersion: '9.9.9' });
+
+  assert.equal(
+    dom.document.getElementById('licenceVersion').textContent,
+    'V9.9.9',
+    'the footer shows the version of the manifest that is loaded'
+  );
+});
+
+test('the footer keeps its number when the browser says nothing', () => {
+  const dom = loadPanel();
+
+  assert.equal(
+    dom.document.getElementById('licenceVersion').textContent,
+    '',
+    'the panel does not invent a number when there is no manifest to read'
+  );
 });

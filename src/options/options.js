@@ -15,6 +15,20 @@
 
   var PROBE_TIMEOUT_MS = 2000;
 
+  // The version in the footer comes from the manifest that is loaded, so the
+  // number on the page is always the number of the extension in the browser.
+  function paintVersion() {
+    var node = document.getElementById('licenceVersion');
+    if (!node) return;
+    var api = globalThis.chrome;
+    if (api && api.runtime && typeof api.runtime.getManifest === 'function') {
+      var manifest = api.runtime.getManifest();
+      if (manifest && manifest.version) node.textContent = 'V' + manifest.version;
+    }
+  }
+
+  paintVersion();
+
   function store() {
     if (!globalThis.chrome || !chrome.storage) return null;
     return chrome.storage.local;
