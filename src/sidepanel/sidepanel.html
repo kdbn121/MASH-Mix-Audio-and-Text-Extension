@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="color-scheme" content="light dark">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MASH-Mix</title>
+<link rel="stylesheet" href="sidepanel.css">
+</head>
+<body>
+<header>
+  <h1>MASH-Mix</h1>
+  <span class="tag">Measure a song. Find its key and its tempo.</span>
+</header>
+
+<section class="card">
+  <h2>1. Audio</h2>
+  <div id="drop" role="button" tabindex="0" aria-label="Choose an audio file">
+    <div class="big">Drop an audio file here</div>
+    <div class="small">mp3, wav, flac, ogg, opus, m4a and more. The file never leaves this machine.</div>
+  </div>
+  <input type="file" id="file" accept="audio/*,video/*">
+  <div class="chosen" id="chosen">No file chosen</div>
+
+  <div class="filecard" id="filecard" hidden>
+    <div class="fc-top">
+      <div class="fc-min">
+        <div class="fc-name" id="fcName"></div>
+        <div class="fc-sub" id="fcSub"></div>
+      </div>
+      <span class="badge" id="fcBadge">attached</span>
+    </div>
+
+    <div class="fc-measure" id="fcMeasure" hidden>
+      <div class="fc-measure-grid" id="fcMeasureGrid">
+        <div class="fc-item">
+          <span class="fc-label">Peak</span>
+          <span class="fc-value pending">measuring...</span>
+        </div>
+        <div class="fc-item">
+          <span class="fc-label">Loudness</span>
+          <span class="fc-value pending">measuring...</span>
+        </div>
+        <div class="fc-item">
+          <span class="fc-label">Clipped</span>
+          <span class="fc-value pending">measuring...</span>
+        </div>
+        <div class="fc-item">
+          <span class="fc-label">DC offset</span>
+          <span class="fc-value pending">measuring...</span>
+        </div>
+        <div class="fc-item">
+          <span class="fc-label">Head silence</span>
+          <span class="fc-value pending">measuring...</span>
+        </div>
+        <div class="fc-item">
+          <span class="fc-label">Crest</span>
+          <span class="fc-value pending">measuring...</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="fc-pitch" id="fcPitch" hidden>
+      <div class="fc-pitch-title">Own pitch and speed</div>
+      <div class="fc-pitch-grid">
+        <div class="fc-item">
+          <span class="fc-label">Pitch</span>
+          <span class="fc-value" id="fcPitchValue">-</span>
+        </div>
+        <div class="fc-item">
+          <span class="fc-label">Speed</span>
+          <span class="fc-value" id="fcSpeedValue">-</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="fc-grid" id="fcGrid"></div>
+    <button type="button" class="fc-clear" id="fcClear">Remove this file</button>
+  </div>
+
+  <div class="urlbox">
+    <label class="urllabel" for="url">Copy Paste any URL</label>
+    <input type="url" id="url" inputmode="url" autocomplete="off" spellcheck="false"
+      placeholder="Paste a link to a song, such as a YouTube or a Dailymotion address">
+    <button type="button" class="ghost" id="urlFetch" disabled>Fetch from the link</button>
+    <div class="urlnote">The engine on this machine does the fetching. The panel never talks to the site.</div>
+  </div>
+
+  <div class="filecard" id="urlcard" hidden>
+    <div class="fc-top">
+      <div class="fc-min">
+        <div class="fc-name" id="urlName"></div>
+        <div class="fc-sub" id="urlSub"></div>
+      </div>
+      <span class="badge" id="urlBadge">fetched</span>
+    </div>
+    <div class="fc-grid" id="urlGrid"></div>
+    <button type="button" class="fc-clear" id="urlClear">Remove this link</button>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. Lyrics</h2>
+  <div class="engine" id="engine">
+    <span class="dot" id="engineDot"></span>
+    <span id="engineText">Looking for the local engine</span>
+    <button type="button" class="retry" id="engineRetry">Check again</button>
+  </div>
+  <p class="hint" id="engineHint"></p>
+
+  <div class="setup" id="engineSetup" hidden>
+    <div class="setup-title">On a new computer</div>
+    <ol class="setup-list">
+      <li>Install Python 3.9 or newer from <a href="https://www.python.org/downloads/" target="_blank" rel="noreferrer noopener">python.org</a> and tick <b>Add Python to PATH</b>.</li>
+      <li>Get the engine from <a href="https://github.com/kdbn121/MASH-Mix-Audio-and-Text" target="_blank" rel="noreferrer noopener">the MASH-Mix repository</a> or from its <a href="https://github.com/kdbn121/MASH-Mix-Audio-and-Text/releases/tag/v0.3.0" target="_blank" rel="noreferrer noopener">release page</a>.</li>
+      <li>Open a terminal and run <code>pip install "mash-mix-audio-and-text[server,sources] @ git+https://github.com/kdbn121/MASH-Mix-Audio-and-Text.git"</code>. The <b>sources</b> extra is the fetcher for links.</li>
+      <li>Start it with <code>mash-mix serve --host 127.0.0.1 --port 8000</code> and leave it running.</li>
+      <li>Load this extension from <a href="https://github.com/kdbn121/MASH-Mix-Audio-and-Text-Extension" target="_blank" rel="noreferrer noopener">the extension repository</a>.</li>
+    </ol>
+    <p class="setup-foot">The measurements of a file need nothing of this. Only the lyrics and the voice need the engine.</p>
+  </div>
+
+  <div class="row2">
+    <label class="row">
+      <span>Language</span>
+      <select id="lang">
+        <option value="auto" selected>Auto, any language</option>
+        <option value="bn-BD">bn-BD, Bangladeshi Bangla</option>
+        <option value="bn-IN">bn-IN, Indian Bengali</option>
+        <option value="bn">bn, automatic region</option>
+        <option value="en">en, English</option>
+        <option value="hi">hi, Hindi</option>
+        <option value="ur">ur, Urdu</option>
+        <option value="ar">ar, Arabic</option>
+        <option value="fa">fa, Persian</option>
+        <option value="es">es, Spanish</option>
+        <option value="fr">fr, French</option>
+        <option value="de">de, German</option>
+        <option value="it">it, Italian</option>
+        <option value="pt">pt, Portuguese</option>
+        <option value="nl">nl, Dutch</option>
+        <option value="id">id, Indonesian</option>
+        <option value="ru">ru, Russian</option>
+        <option value="uk">uk, Ukrainian</option>
+        <option value="el">el, Greek</option>
+        <option value="he">he, Hebrew</option>
+        <option value="th">th, Thai</option>
+        <option value="vi">vi, Vietnamese</option>
+        <option value="tr">tr, Turkish</option>
+        <option value="sw">sw, Swahili</option>
+        <option value="zh">zh, Chinese</option>
+        <option value="ja">ja, Japanese</option>
+        <option value="ko">ko, Korean</option>
+        <option value="ta">ta, Tamil</option>
+        <option value="te">te, Telugu</option>
+        <option value="kn">kn, Kannada</option>
+        <option value="ml">ml, Malayalam</option>
+        <option value="mr">mr, Marathi</option>
+        <option value="ne">ne, Nepali</option>
+        <option value="si">si, Sinhala</option>
+        <option value="gu">gu, Gujarati</option>
+        <option value="pa">pa, Punjabi</option>
+        <option value="cs">cs, Czech</option>
+        <option value="pl">pl, Polish</option>
+        <option value="hu">hu, Hungarian</option>
+        <option value="ka">ka, Georgian</option>
+        <option value="lv">lv, Latvian</option>
+      </select>
+    </label>
+    <label class="row">
+      <span>Script</span>
+      <select id="script">
+        <option value="auto" selected>Auto, any script</option>
+      </select>
+    </label>
+  </div>
+  <p class="hint" id="langHint">The script box holds every script of every language, and it starts on "Auto, any script", which leaves the words in the script the engine heard them in. Pick a script by hand and that script is used for every language.</p>
+  <label class="row">
+    <span>Model</span>
+    <select id="quality">
+      <option value="auto" selected>Auto, the best one that fits</option>
+      <option value="best">Best quality, the slow one</option>
+      <option value="fast">Fast, the quick one</option>
+    </select>
+  </label>
+  <button id="lyrics" disabled>Get the Lyrics / Text</button>
+  <div class="status" id="status" role="status" aria-live="polite"></div>
+  <div class="progress" id="progress" role="progressbar" aria-label="The engine is working" hidden>
+    <div class="progress-bar"></div>
+  </div>
+
+  <div class="songplay" id="songplay" hidden>
+    <div class="sp-top">
+      <button type="button" class="sp-play" id="songPlay" aria-label="Play the song">
+        <svg class="sp-ico sp-ico-play" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M8 5v14l11-7z"></path>
+        </svg>
+        <svg class="sp-ico sp-ico-pause" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M6 5h4v14H6zM14 5h4v14h-4z"></path>
+        </svg>
+      </button>
+      <div class="sp-mid">
+        <input type="range" class="sp-seek" id="songSeek" min="0" max="1" step="0.01" value="0"
+          aria-label="Seek in the song">
+        <div class="sp-times">
+          <span id="songNow">0:00</span>
+          <span id="songTotal">0:00</span>
+        </div>
+      </div>
+    </div>
+    <div class="sp-nav">
+      <button type="button" class="sp-navbtn" id="songBack" aria-label="Go back five seconds">
+        <svg class="sp-navico" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M11 6v12L2 12zM22 6v12l-9-6z"></path>
+        </svg>
+        <span>5s</span>
+      </button>
+      <button type="button" class="sp-navbtn sp-pausebtn" id="songPause" aria-label="Pause the song">
+        <svg class="sp-navico" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M6 5h4v14H6zM14 5h4v14h-4z"></path>
+        </svg>
+        <span>Pause</span>
+      </button>
+      <button type="button" class="sp-navbtn" id="songFwd" aria-label="Go forward five seconds">
+        <span>5s</span>
+        <svg class="sp-navico" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M13 6v12l9-6zM2 6v12l9-6z"></path>
+        </svg>
+      </button>
+    </div>
+    <div class="sp-hint" id="songHint">The song plays from this machine. Nothing is sent anywhere.</div>
+    <audio id="song" preload="metadata"></audio>
+  </div>
+
+  <div class="lines" id="lines" hidden></div>
+  <div class="dl" id="dl" hidden></div>
+  <div class="speech" id="speech" hidden>
+    <button type="button" class="ghost" id="speak">Speak the lyrics</button>
+    <audio id="player" controls hidden></audio>
+  </div>
+
+  <div class="outcome" id="outcome" hidden>
+    <div class="oc-top">
+      <span class="oc-title" id="outcomeTitle">Lyrics / Text</span>
+      <span class="oc-meta" id="outcomeMeta"></span>
+    </div>
+    <pre class="oc-text" id="outcomeText"></pre>
+    <div class="oc-actions">
+      <button type="button" class="ghost" id="outcomeCopy">Copy to clipboard</button>
+      <button type="button" class="ghost" id="outcomeDownload">Download .txt</button>
+    </div>
+    <div class="oc-note" id="outcomeNote"></div>
+  </div>
+</section>
+
+<section class="card" id="editorCard" hidden>
+  <h2>3. Editor</h2>
+  <p class="hint" id="editorHint">Every change here is written to the text and the SRT at once, and the file you download carries your edits.</p>
+
+  <div class="ed-tools">
+    <button type="button" class="ghost" id="edAdd">Add a line</button>
+    <button type="button" class="ghost" id="edAddUp" aria-label="Add a line above the line you are on">Add a line Up</button>
+    <button type="button" class="ghost" id="edAddDown" aria-label="Add a line under the line you are on">Add a line Down</button>
+    <button type="button" class="ghost" id="edSplit">Split</button>
+    <button type="button" class="ghost" id="edMerge">Merge</button>
+    <button type="button" class="ghost" id="edRemove">Remove</button>
+    <button type="button" class="ghost" id="edCut">Cut</button>
+    <button type="button" class="ghost" id="edCopy">Copy</button>
+    <button type="button" class="ghost" id="edPaste">Paste</button>
+  </div>
+
+  <div class="ed-preview" id="edPreview">
+    <div class="ed-preview-title">Track preview</div>
+    <div class="ed-head">
+      <span class="ed-num" id="edPreviewNum">-</span>
+      <span class="ed-time ed-preview-time" id="edPreviewStart">00:00:00,000</span>
+      <span class="ed-arrow">to</span>
+      <span class="ed-time ed-preview-time" id="edPreviewEnd">00:00:00,000</span>
+      <button type="button" class="ed-play" id="edPreviewPlay" aria-label="Play the song from this line">play</button>
+      <button type="button" class="ed-play ed-pause" id="edPreviewPause" aria-label="Pause the song">pause</button>
+    </div>
+    <div class="ed-preview-words" id="edPreviewWords">Choose a line and it is shown here.</div>
+    <div class="ed-track">
+      <input type="range" class="ed-track-seek" id="edTrackSeek" min="0" max="1" step="0.01" value="0"
+        aria-label="Seek in the song">
+      <div class="ed-track-times">
+        <span class="ed-track-now" id="edTrackNow">00:00:00,000</span>
+        <span class="ed-track-total" id="edTrackTotal">00:00:00,000</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="ed-list" id="edList"></div>
+
+  <div class="ed-panes">
+    <div class="ed-pane">
+      <div class="ed-pane-title">Text</div>
+      <pre class="ed-pre" id="edTxt"></pre>
+    </div>
+    <div class="ed-pane">
+      <div class="ed-pane-title">SRT</div>
+      <pre class="ed-pre" id="edSrt"></pre>
+    </div>
+  </div>
+
+  <div class="ed-actions">
+    <button type="button" id="edDownloadSrt">Download the edited .srt</button>
+    <button type="button" class="ghost" id="edDownloadTxt">Download the edited .txt</button>
+  </div>
+  <p class="ed-note" id="edNote"></p>
+</section>
+
+<footer>
+  <span class="licence">MASH-Mix-Audio-and-Text-Extension <span id="licenceVersion">V1.9.0</span>. Copyright (c) 2026 MASH (Khaled Bhuiyan). MIT Licence.</span>
+  <span class="licence"><a id="optionsLink" href="#">Engine settings</a></span>
+  <span class="licence"><button type="button" class="to-top" id="toTop" aria-label="Go back to the top of the panel">Back to top</button></span>
+</footer>
+
+<script src="../core/core.js"></script>
+<script src="editor.js"></script>
+<script src="sidepanel.js"></script>
+</body>
+</html>
