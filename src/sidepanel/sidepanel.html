@@ -206,6 +206,20 @@
         </div>
       </div>
     </div>
+    <div class="sp-nav">
+      <button type="button" class="sp-navbtn" id="songBack" aria-label="Go back five seconds">
+        <svg class="sp-navico" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M11 6v12L2 12zM22 6v12l-9-6z"></path>
+        </svg>
+        <span>5s</span>
+      </button>
+      <button type="button" class="sp-navbtn" id="songFwd" aria-label="Go forward five seconds">
+        <span>5s</span>
+        <svg class="sp-navico" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M13 6v12l9-6zM2 6v12l9-6z"></path>
+        </svg>
+      </button>
+    </div>
     <div class="sp-hint" id="songHint">The song plays from this machine. Nothing is sent anywhere.</div>
     <audio id="song" preload="metadata"></audio>
   </div>
@@ -231,12 +245,47 @@
   </div>
 </section>
 
+<section class="card" id="editorCard" hidden>
+  <h2>3. Editor</h2>
+  <p class="hint" id="editorHint">Every change here is written to the text and the SRT at once, and the file you download carries your edits.</p>
+
+  <div class="ed-tools">
+    <button type="button" class="ghost" id="edAdd">Add a line</button>
+    <button type="button" class="ghost" id="edSplit">Split</button>
+    <button type="button" class="ghost" id="edMerge">Merge</button>
+    <button type="button" class="ghost" id="edRemove">Remove</button>
+    <button type="button" class="ghost" id="edCut">Cut</button>
+    <button type="button" class="ghost" id="edCopy">Copy</button>
+    <button type="button" class="ghost" id="edPaste">Paste</button>
+  </div>
+
+  <div class="ed-list" id="edList"></div>
+
+  <div class="ed-panes">
+    <div class="ed-pane">
+      <div class="ed-pane-title">Text</div>
+      <pre class="ed-pre" id="edTxt"></pre>
+    </div>
+    <div class="ed-pane">
+      <div class="ed-pane-title">SRT</div>
+      <pre class="ed-pre" id="edSrt"></pre>
+    </div>
+  </div>
+
+  <div class="ed-actions">
+    <button type="button" id="edDownloadSrt">Download the edited .srt</button>
+    <button type="button" class="ghost" id="edDownloadTxt">Download the edited .txt</button>
+  </div>
+  <p class="ed-note" id="edNote"></p>
+</section>
+
 <footer>
   <span class="licence">MASH-Mix-Audio-and-Text. Copyright (c) 2026 MASH (Khaled Bhuiyan). MIT Licence.</span>
   <span class="licence"><a id="optionsLink" href="#">Engine settings</a></span>
 </footer>
 
 <script src="../core/core.js"></script>
+<script src="editor.js"></script>
 <script src="sidepanel.js"></script>
 </body>
 </html>

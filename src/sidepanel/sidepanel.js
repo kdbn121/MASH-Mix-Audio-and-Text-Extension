@@ -10,6 +10,7 @@
 
 (function () {
   var dsp = globalThis.MASH_MIX.dsp;
+  var ed = globalThis.MASH_MIX.editor;
 
   var DEFAULT_ENGINE = 'http://127.0.0.1:8000';
 
@@ -79,6 +80,23 @@
   var outcomeCopy = document.getElementById('outcomeCopy');
   var outcomeDownload = document.getElementById('outcomeDownload');
   var outcomeNote = document.getElementById('outcomeNote');
+  var songBack = document.getElementById('songBack');
+  var songFwd = document.getElementById('songFwd');
+  var editorCard = document.getElementById('editorCard');
+  var editorHint = document.getElementById('editorHint');
+  var editorList = document.getElementById('edList');
+  var editorTxt = document.getElementById('edTxt');
+  var editorSrt = document.getElementById('edSrt');
+  var editorNote = document.getElementById('edNote');
+  var editorAdd = document.getElementById('edAdd');
+  var editorSplit = document.getElementById('edSplit');
+  var editorMerge = document.getElementById('edMerge');
+  var editorRemove = document.getElementById('edRemove');
+  var editorCut = document.getElementById('edCut');
+  var editorCopy = document.getElementById('edCopy');
+  var editorPaste = document.getElementById('edPaste');
+  var editorDownloadSrt = document.getElementById('edDownloadSrt');
+  var editorDownloadTxt = document.getElementById('edDownloadTxt');
 
   var picked = null;
   var sourceUrl = '';
@@ -91,6 +109,13 @@
   var engineAudioUrl = '';
   var lyricTimes = [];
   var activeLine = -1;
+
+  // The cues the editor holds. They are the same lines the player marks, so an
+  // edit in the editor moves the line in the player too.
+  var cues = [];
+  var cueSelected = -1;
+  var cueClipboard = '';
+  var cueClipboardSrt = '';
 
   // ---------------------------------------------------------------------------
   // the script of every language
@@ -166,7 +191,22 @@
     languageOrder: LANGUAGE_ORDER,
     scriptsFor: scriptsFor,
     nativeScript: nativeScript,
-    setBusy: setBusy
+    setBusy: setBusy,
+    cues: function () { return cues; },
+    editorCues: function () { return cues; },
+    renderEditor: renderEditor,
+    refreshEditor: refreshEditor,
+    addCue: addCue,
+    splitSelected: splitSelected,
+    mergeSelected: mergeSelected,
+    removeSelected: removeSelected,
+    cutSelected: cutSelected,
+    copySelected: copySelected,
+    pasteSelected: pasteSelected,
+    selectCue: selectCue,
+    stepSong: stepSong,
+    startSeekHold: startSeekHold,
+    stopSeekHold: stopSeekHold
   };
 
   /**
@@ -409,6 +449,9 @@
     lyricText = '';
     lyricTimes = [];
     activeLine = -1;
+    cues = [];
+    cueSelected = -1;
+    renderEditor();
     attachSong(file);
     updateLyricsButton();
     measure(file);
@@ -428,6 +471,9 @@
     lyricText = '';
     lyricTimes = [];
     activeLine = -1;
+    cues = [];
+    cueSelected = -1;
+    renderEditor();
     attachSong(null);
     updateLyricsButton();
   }
@@ -641,8 +687,20 @@
     songWrap.hidden = false;
   }
 
+  /**
+   * True when there is a song to play or to move.
+   *
+   * The address on the audio element is asked as well as the two the panel
+   * keeps, because that element is where the address really is, whatever put
+   * it there.
+   */
+  function hasSong() {
+    if (songUrl || engineAudioUrl) return true;
+    return !!(songAudio && songAudio.src);
+  }
+
   function toggleSong() {
-    if (!songUrl && !engineAudioUrl) return;
+    if (!hasSong()) return;
     if (songAudio.paused) {
       var attempt = songAudio.play();
       if (attempt && typeof attempt.catch === 'function') {
@@ -658,7 +716,7 @@
 
   /** Move the song to a moment in seconds and carry on playing. */
   function seekSong(seconds) {
-    if (!songUrl && !engineAudioUrl) return;
+    if (!hasSong()) return;
     var at = Math.max(0, Number(seconds) || 0);
     if (isFinite(songAudio.duration)) {
       at = Math.min(at, songAudio.duration);
@@ -735,6 +793,82 @@
   songSeek.addEventListener('pointerup', function () { songSeekDragging = false; });
   songSeek.addEventListener('blur', function () { songSeekDragging = false; });
   songPlay.addEventListener('click', toggleSong);
+
+  // ---------------------------------------------------------------------------
+  // the five second buttons
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Move the song five seconds forward or back.
+   *
+   * The button is held down and the song keeps moving in steps of five
+   * seconds until the button is let go, so a reader can find the exact moment
+   * a line is sung without having to aim at the bar.
+   */
+  var SEEK_STEP = 5;
+  var SEEK_HOLD_DELAY = 400;
+  var SEEK_HOLD_RATE = 120;
+  var seekHoldTimer = null;
+  var seekHoldRate = null;
+
+  function stopSeekHold() {
+    if (seekHoldTimer !== null) {
+      clearTimeout(seekHoldTimer);
+      seekHoldTimer = null;
+    }
+    if (seekHoldRate !== null) {
+      clearInterval(seekHoldRate);
+      seekHoldRate = null;
+    }
+  }
+
+  function stepSong(seconds) {
+    if (!hasSong()) return;
+    seekSong(Number(songAudio.currentTime || 0) + seconds);
+  }
+
+  function startSeekHold(seconds) {
+    stopSeekHold();
+    stepSong(seconds);
+    seekHoldTimer = setTimeout(function () {
+      seekHoldTimer = null;
+      seekHoldRate = setInterval(function () {
+        stepSong(seconds);
+      }, SEEK_HOLD_RATE);
+    }, SEEK_HOLD_DELAY);
+  }
+
+  function bindSeekHold(button, seconds) {
+    button.addEventListener('pointerdown', function (e) {
+      if (e.button !== undefined && e.button !== 0) return;
+      e.preventDefault();
+      startSeekHold(seconds);
+    });
+    // The button is let go of, or the pointer leaves it, or the window loses
+    // the pointer, and the song stops moving in steps.
+    button.addEventListener('pointerup', stopSeekHold);
+    button.addEventListener('pointercancel', stopSeekHold);
+    button.addEventListener('pointerleave', stopSeekHold);
+    button.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      if (e.repeat) {
+        stepSong(seconds);
+        return;
+      }
+      startSeekHold(seconds);
+    });
+    button.addEventListener('keyup', stopSeekHold);
+    button.addEventListener('blur', stopSeekHold);
+  }
+
+  bindSeekHold(songBack, -SEEK_STEP);
+  bindSeekHold(songFwd, SEEK_STEP);
+  if (typeof window !== 'undefined' && window.addEventListener) {
+    // The pointer is let go of anywhere in the window, and the song stops
+    // moving in steps.
+    window.addEventListener('pointerup', stopSeekHold);
+  }
 
   // ---------------------------------------------------------------------------
   // the local engine
@@ -916,41 +1050,20 @@
       if (data.audio) attachEngineAudio(data.audio);
     }
     var lines = data.lines || [];
-    lyricTimes = [];
-    activeLine = -1;
-    for (var i = 0; i < lines.length; i++) {
-      var rowEl = document.createElement('div');
-      rowEl.className = 'ln';
-      var t = document.createElement('div');
-      t.className = 't';
-      t.textContent = clock(lines[i].start);
-      var x = document.createElement('div');
-      x.className = 'x';
-      x.textContent = lines[i].text;
-      rowEl.appendChild(t);
-      rowEl.appendChild(x);
-      // A lyric line carries the moment it starts, so it can carry the song
-      // to that moment. The line is a button for that reason.
-      var at = Number(lines[i].start) || 0;
-      rowEl.className = 'ln ln-seek';
-      rowEl.setAttribute('role', 'button');
-      rowEl.setAttribute('tabindex', '0');
-      rowEl.setAttribute('aria-label', 'Play the song from ' + mmss(at));
-      rowEl.addEventListener('click', function () {
-        seekSong(at);
-        if (songAudio.paused) toggleSong();
+    // The editor takes the same lines, so a change in one is a change in the
+    // other. The panel never keeps two truths about the words of a song.
+    cues = [];
+    for (var c = 0; c < lines.length; c++) {
+      cues.push({
+        start: Number(lines[c].start) || 0,
+        end: Number(lines[c].end) || 0,
+        text: String(lines[c].text == null ? '' : lines[c].text)
       });
-      rowEl.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          seekSong(at);
-          if (songAudio.paused) toggleSong();
-        }
-      });
-      linesEl.appendChild(rowEl);
-      lyricTimes.push({ start: at, end: Number(lines[i].end) || at });
     }
-
+    cueSelected = cues.length ? 0 : -1;
+    // The editor draws the lines the player marks, because both come from the
+    // same list of cues.
+    renderEditor();
     dlEl.innerHTML = '';
     dlEl.hidden = false;
     var labels = { srt: 'Download .srt', txt: 'Download .txt', vtt: 'Download .vtt', lrc: 'Download .lrc' };
@@ -966,6 +1079,411 @@
     }
     speechEl.hidden = !lyricText;
     renderOutcome(data);
+  }
+
+  // ---------------------------------------------------------------------------
+  // the editor
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Draw the editor.
+   *
+   * Every row is a cue: its moment, the moment it ends, and the words. The
+   * words are written in a box of their own so that a keyboard of any layout
+   * can type into it, including the ones that write Bangla.
+   */
+  function renderEditor() {
+    editorList.innerHTML = '';
+    editorCard.hidden = !cues.length;
+    for (var i = 0; i < cues.length; i++) {
+      editorList.appendChild(cueRow(i));
+    }
+    refreshEditor();
+  }
+
+  /** One row of the editor: the number, the two moments and the words. */
+  function cueRow(index) {
+    var cue = cues[index];
+    var row = document.createElement('div');
+    row.className = 'ed-row' + (index === cueSelected ? ' ed-sel' : '');
+
+    var head = document.createElement('div');
+    head.className = 'ed-head';
+
+    var number = document.createElement('button');
+    number.type = 'button';
+    number.className = 'ed-num';
+    number.textContent = String(index + 1);
+    number.setAttribute('aria-label', 'Select line ' + (index + 1));
+    number.addEventListener('click', function () {
+      selectCue(index);
+    });
+    head.appendChild(number);
+
+    var start = document.createElement('input');
+    start.type = 'text';
+    start.className = 'ed-time';
+    start.value = ed.formatTime(ed.cueStart(cue));
+    start.setAttribute('aria-label', 'Start of line ' + (index + 1));
+    start.setAttribute('inputmode', 'decimal');
+    start.addEventListener('input', function () {
+      // The strict form only, so the file on the screen does not jump about
+      // while the field is still being typed.
+      var at = ed.parseTime(start.value, true);
+      if (at === null) return;
+      cues[index] = ed.setStart(cues[index], at);
+      refreshEditor();
+    });
+    start.addEventListener('change', function () {
+      var at = ed.parseTime(start.value, false);
+      if (at === null) {
+        start.value = ed.formatTime(ed.cueStart(cues[index]));
+        editorNote.textContent = 'That time could not be read, so the line kept the time it had.';
+        return;
+      }
+      cues[index] = ed.setStart(cues[index], at);
+      start.value = ed.formatTime(ed.cueStart(cues[index]));
+      refreshEditor();
+    });
+    head.appendChild(start);
+
+    var arrow = document.createElement('span');
+    arrow.className = 'ed-arrow';
+    arrow.textContent = 'to';
+    head.appendChild(arrow);
+
+    var end = document.createElement('input');
+    end.type = 'text';
+    end.className = 'ed-time';
+    end.value = ed.formatTime(ed.cueEnd(cue));
+    end.setAttribute('aria-label', 'End of line ' + (index + 1));
+    end.setAttribute('inputmode', 'decimal');
+    end.addEventListener('input', function () {
+      var at = ed.parseTime(end.value, true);
+      if (at === null) return;
+      cues[index] = ed.setEnd(cues[index], at);
+      refreshEditor();
+    });
+    end.addEventListener('change', function () {
+      var at = ed.parseTime(end.value, false);
+      if (at === null) {
+        end.value = ed.formatTime(ed.cueEnd(cues[index]));
+        editorNote.textContent = 'That time could not be read, so the line kept the time it had.';
+        return;
+      }
+      cues[index] = ed.setEnd(cues[index], at);
+      end.value = ed.formatTime(ed.cueEnd(cues[index]));
+      refreshEditor();
+    });
+    head.appendChild(end);
+
+    var play = document.createElement('button');
+    play.type = 'button';
+    play.className = 'ed-play';
+    play.textContent = 'play';
+    play.setAttribute('aria-label', 'Play the song from line ' + (index + 1));
+    play.addEventListener('click', function () {
+      seekSong(ed.cueStart(cues[index]));
+      if (songAudio.paused) toggleSong();
+    });
+    head.appendChild(play);
+
+    row.appendChild(head);
+
+    var words = document.createElement('textarea');
+    words.className = 'ed-words';
+    words.rows = 2;
+    words.value = cue.text;
+    words.spellcheck = false;
+    words.setAttribute('aria-label', 'The words of line ' + (index + 1));
+    words.addEventListener('focus', function () {
+      cueSelected = index;
+      markSelected();
+    });
+    words.addEventListener('input', function () {
+      // What was typed is kept as it was typed. Nothing here rewrites the
+      // letters, so a Bangla word, a Tamil word or an Arabic word is carried
+      // through whole and in the order the keyboard wrote it.
+      cues[index].text = words.value;
+      refreshEditor();
+    });
+    row.appendChild(words);
+
+    return row;
+  }
+
+  /** Mark the row that is the one being worked on. */
+  function markSelected() {
+    var rows = editorList.children;
+    for (var i = 0; i < rows.length; i++) {
+      rows[i].className = 'ed-row' + (i === cueSelected ? ' ed-sel' : '');
+    }
+  }
+
+  function selectCue(index) {
+    cueSelected = index;
+    markSelected();
+  }
+
+  /**
+   * Write the cues out again, everywhere they are shown.
+   *
+   * The text file and the subtitle file are both written from the same list of
+   * cues, so they can never disagree with each other, and the lines the player
+   * marks are read from the same list too.
+   */
+  function refreshEditor() {
+    editorTxt.textContent = ed.buildTxt(cues);
+    editorSrt.textContent = ed.buildSrt(cues);
+    lyricText = ed.buildTxt(cues);
+    outcomeText.textContent = lyricText;
+    renderLines();
+    refreshEditorMeta();
+  }
+
+  /** The count of the lines and the words, under the editor. */
+  function refreshEditorMeta() {
+    var count = 0;
+    for (var i = 0; i < cues.length; i++) {
+      if (String(cues[i].text || '').trim()) count = count + 1;
+    }
+    editorHint.textContent = count + (count === 1 ? ' line' : ' lines') +
+      ' in the editor. Every change here is written to the text and the SRT at once, ' +
+      'and the file you download carries your edits.';
+  }
+
+  /**
+   * Draw the lines the player marks.
+   *
+   * The lines come from the cues, so an edit in the editor is an edit in the
+   * player as well.
+   */
+  function renderLines() {
+    linesEl.innerHTML = '';
+    lyricTimes = [];
+    activeLine = -1;
+    for (var i = 0; i < cues.length; i++) {
+      var at = ed.cueStart(cues[i]);
+      var rowEl = document.createElement('div');
+      rowEl.className = 'ln ln-seek';
+      var t = document.createElement('div');
+      t.className = 't';
+      t.textContent = clock(at);
+      var x = document.createElement('div');
+      x.className = 'x';
+      x.textContent = cues[i].text;
+      rowEl.appendChild(t);
+      rowEl.appendChild(x);
+      rowEl.setAttribute('role', 'button');
+      rowEl.setAttribute('tabindex', '0');
+      rowEl.setAttribute('aria-label', 'Play the song from ' + mmss(at));
+      rowEl.addEventListener('click', function () {
+        seekSong(at);
+        if (songAudio.paused) toggleSong();
+      });
+      rowEl.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          seekSong(at);
+          if (songAudio.paused) toggleSong();
+        }
+      });
+      linesEl.appendChild(rowEl);
+      lyricTimes.push({ start: at, end: ed.cueEnd(cues[i]) });
+    }
+  }
+
+  /** Put a new line into the list of cues and draw the editor again. */
+  function addCue() {
+    var before = cueSelected >= 0 ? cues[cueSelected] : null;
+    var after = cueSelected >= 0 && cueSelected + 1 < cues.length ? cues[cueSelected + 1] : null;
+    var cue = ed.blankCue(before, after);
+    var at = cueSelected >= 0 ? cueSelected + 1 : cues.length;
+    cues.splice(at, 0, cue);
+    cueSelected = at;
+    renderEditor();
+    editorNote.textContent = 'A new line was added. Type the words into it.';
+  }
+
+  /**
+   * Cut the selected line in half at the place the caret is in.
+   *
+   * The caret is read from the box of words that has the focus, so the reader
+   * puts it where they want the line broken.
+   */
+  function splitSelected() {
+    if (cueSelected < 0 || cueSelected >= cues.length) {
+      editorNote.textContent = 'Choose a line first.';
+      return;
+    }
+    var cue = cues[cueSelected];
+    var at = caretIn(cueSelected);
+    var parts = ed.splitCue(cue, at);
+    cues.splice(cueSelected, 1, parts[0], parts[1]);
+    cueSelected = cueSelected + 1;
+    renderEditor();
+    editorNote.textContent = 'The line was cut in two.';
+  }
+
+  /**
+   * Join the selected line with the one after it.
+   */
+  function mergeSelected() {
+    if (cueSelected < 0 || cueSelected >= cues.length - 1) {
+      editorNote.textContent = 'The last line has nothing after it to join with.';
+      return;
+    }
+    var joined = ed.mergeCues(cues[cueSelected], cues[cueSelected + 1]);
+    cues.splice(cueSelected, 2, joined);
+    renderEditor();
+    editorNote.textContent = 'The two lines were joined into one.';
+  }
+
+  /** Take the selected line out of the list. */
+  function removeSelected() {
+    if (cueSelected < 0 || cueSelected >= cues.length) {
+      editorNote.textContent = 'Choose a line first.';
+      return;
+    }
+    cues.splice(cueSelected, 1);
+    if (cueSelected >= cues.length) cueSelected = cues.length - 1;
+    renderEditor();
+    editorNote.textContent = 'The line was removed.';
+  }
+
+  /**
+   * Cut the selected line to the clipboard of the editor.
+   *
+   * The words are also written to the clipboard of the browser, so the line
+   * can be pasted into another program as well.
+   */
+  function cutSelected() {
+    if (cueSelected < 0 || cueSelected >= cues.length) {
+      editorNote.textContent = 'Choose a line first.';
+      return;
+    }
+    cueClipboard = cues[cueSelected].text;
+    cueClipboardSrt = ed.buildSrt([cues[cueSelected]]);
+    copyToBrowser(cueClipboardSrt);
+    removeSelected();
+    editorNote.textContent = 'The line was cut. Paste it where you want it.';
+  }
+
+  /**
+   * Copy the selected line to the clipboard of the editor.
+   */
+  function copySelected() {
+    if (cueSelected < 0 || cueSelected >= cues.length) {
+      editorNote.textContent = 'Choose a line first.';
+      return;
+    }
+    cueClipboard = cues[cueSelected].text;
+    cueClipboardSrt = ed.buildSrt([cues[cueSelected]]);
+    copyToBrowser(cueClipboardSrt);
+    editorNote.textContent = 'The line was copied.';
+  }
+
+  /**
+   * Paste the line that was cut or copied.
+   *
+   * The line is put in after the one that is selected, so a line can be moved
+   * by cutting it and pasting it somewhere else.
+   */
+  function pasteSelected() {
+    if (!cueClipboard) {
+      editorNote.textContent = 'There is nothing to paste.';
+      return;
+    }
+    var cue = {
+      start: 0,
+      end: 0,
+      text: cueClipboard
+    };
+    if (cueSelected >= 0) {
+      cue.start = ed.cueStart(cues[cueSelected]);
+      cue.end = ed.cueEnd(cues[cueSelected]);
+    }
+    var at = cueSelected >= 0 ? cueSelected + 1 : cues.length;
+    cues.splice(at, 0, cue);
+    cueSelected = at;
+    renderEditor();
+    editorNote.textContent = 'The line was pasted.';
+  }
+
+  /** Write text to the clipboard of the browser, when it is allowed. */
+  function copyToBrowser(text) {
+    if (!navigator.clipboard || !navigator.clipboard.writeText) return;
+    try {
+      navigator.clipboard.writeText(text).catch(function () {});
+    } catch (err) {
+      // The clipboard of the browser is not always there, and the editor does
+      // not need it.
+    }
+  }
+
+  /**
+   * The place the caret is in, in the words of a line.
+   *
+   * The box of words that has the focus is the one that is read, so the
+   * reader puts the caret where they want the line broken.
+   */
+  function caretIn(index) {
+    var boxes = editorList.querySelectorAll ? editorList.querySelectorAll('.ed-words') : [];
+    for (var i = 0; i < boxes.length; i++) {
+      if (boxes[i] === document.activeElement) {
+        var at = Number(boxes[i].selectionStart);
+        return isFinite(at) ? at : 0;
+      }
+    }
+    return Math.floor(String(cues[index].text || '').length / 2);
+  }
+
+  /**
+   * Save the edited subtitle file.
+   *
+   * The file is built in the browser from the cues, so it holds the edits and
+   * not the words the engine first wrote.
+   */
+  function downloadEditedSrt() {
+    var text = ed.buildSrt(cues);
+    if (!text) {
+      editorNote.textContent = 'There are no lines to save yet.';
+      return;
+    }
+    saveFile(text, 'application/x-subrip;charset=utf-8', editorFileName('srt'));
+    editorNote.textContent = 'Saved as ' + editorFileName('srt') + '.';
+  }
+
+  /** Save the edited text file. */
+  function downloadEditedTxt() {
+    var text = ed.buildTxt(cues);
+    if (!text) {
+      editorNote.textContent = 'There are no lines to save yet.';
+      return;
+    }
+    saveFile(text, 'text/plain;charset=utf-8', editorFileName('txt'));
+    editorNote.textContent = 'Saved as ' + editorFileName('txt') + '.';
+  }
+
+  /** Write a file into the downloads of the browser. */
+  function saveFile(text, type, name) {
+    var blob = new Blob([text], { type: type });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
+  }
+
+  /** The name of the saved file, taken from the title of the song. */
+  function editorFileName(suffix) {
+    var title = outcomeTitle.textContent || 'lyrics';
+    var clean = title.replace(/[<>:"/\\|?*]/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!clean) clean = 'lyrics';
+    return clean.slice(0, 80) + '.' + suffix;
   }
 
   /**
@@ -1156,6 +1674,15 @@
   });
   outcomeCopy.addEventListener('click', copyOutcome);
   outcomeDownload.addEventListener('click', downloadOutcome);
+  editorAdd.addEventListener('click', addCue);
+  editorSplit.addEventListener('click', splitSelected);
+  editorMerge.addEventListener('click', mergeSelected);
+  editorRemove.addEventListener('click', removeSelected);
+  editorCut.addEventListener('click', cutSelected);
+  editorCopy.addEventListener('click', copySelected);
+  editorPaste.addEventListener('click', pasteSelected);
+  editorDownloadSrt.addEventListener('click', downloadEditedSrt);
+  editorDownloadTxt.addEventListener('click', downloadEditedTxt);
   engineRetry.addEventListener('click', function () {
     checkEngine();
   });

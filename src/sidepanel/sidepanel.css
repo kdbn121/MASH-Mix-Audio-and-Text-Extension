@@ -315,6 +315,36 @@ button.ghost {
 }
 .sp-hint { margin-top: 7px; font-size: 10.5px; color: var(--muted); }
 
+/* The five second buttons. They sit under the bar of the player and over the
+   line that says the song plays from this machine. */
+.sp-nav {
+  display: flex;
+  gap: 8px;
+  margin-top: 9px;
+}
+.sp-navbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1 1 0;
+  justify-content: center;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+.sp-navbtn:hover { border-color: var(--accent); color: var(--accent); }
+.sp-navbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.sp-navbtn:active { background: rgba(243, 169, 180, .16); }
+.sp-navico { width: 15px; height: 15px; fill: currentColor; }
+
 .lines { margin-top: 10px; max-height: 320px; overflow: auto; }
 .lines[hidden] { display: none; }
 .ln { display: flex; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--line); }
@@ -369,6 +399,111 @@ button.ghost {
 }
 .oc-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 9px; }
 .oc-note { margin-top: 7px; font-size: 11px; color: var(--muted); min-height: 14px; }
+
+/* the editor */
+.ed-tools { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.ed-tools button {
+  padding: 5px 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  width: auto;
+}
+.ed-list { max-height: 420px; overflow: auto; margin-bottom: 10px; }
+.ed-list:empty { display: none; }
+.ed-row {
+  padding: 7px 8px;
+  margin-bottom: 6px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--panel-2);
+}
+.ed-row.ed-sel { border-color: var(--accent); }
+.ed-head { display: flex; align-items: center; gap: 6px; }
+.ed-num {
+  flex: 0 0 auto;
+  min-width: 24px;
+  width: auto;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.ed-row.ed-sel .ed-num { color: var(--accent); border-color: var(--accent); }
+.ed-time {
+  flex: 1 1 0;
+  min-width: 0;
+  width: 100%;
+  padding: 4px 6px;
+  font-size: 11.5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.ed-time:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.ed-arrow { flex: 0 0 auto; font-size: 10.5px; color: var(--muted); }
+.ed-play {
+  flex: 0 0 auto;
+  width: auto;
+  padding: 3px 8px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.ed-play:hover { color: var(--accent); border-color: var(--accent); }
+.ed-words {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 7px 8px;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  resize: vertical;
+}
+.ed-words:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.ed-panes { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.ed-pane { min-width: 0; }
+.ed-pane-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .3px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.ed-pre {
+  margin: 0;
+  padding: 8px;
+  max-height: 190px;
+  overflow: auto;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 10.5px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.ed-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.ed-actions button { width: auto; }
+.ed-note { margin-top: 7px; font-size: 11px; color: var(--muted); min-height: 14px; }
 
 footer { margin-top: 4px; color: var(--muted); font-size: 11.5px; text-align: center; }
 footer .licence { display: block; }

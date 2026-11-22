@@ -85,6 +85,24 @@ exists for the node test and audit tooling.
 19. **The panel says where the words came from, all three ways.** The
     subtitles the page carries, the words read off the picture of a karaoke,
     and the words a model heard. They are not the same claim.
+20. **The editor is the one truth about the words.** The lines the player
+    marks, the plain text file and the subtitle file are all written from the
+    same list of cues. An edit in the editor is an edit in the player too, and
+    the file that is downloaded carries the edits.
+21. **The editor never rewrites the letters.** The words are held exactly as
+    they were typed, so a word in Bangla, in Tamil, in Arabic or in Latin is
+    carried through whole. The box of words is a plain text box, because that
+    is what lets an input method compose it properly.
+22. **A cue never ends before it starts.** When the start of a cue is moved
+    past its end, the end moves with it and the cue keeps the length it had.
+    The rules for this live in `src/sidepanel/editor.js` and not in the panel,
+    so they can be tested on their own.
+23. **The five second buttons repeat while they are held down.** The jump
+    happens at once on the press, and then every 120 ms until the button is
+    let go, whether that is a press of the mouse, the key, a pointer that
+    leaves the button or the window losing the pointer. The buttons sit under
+    the bar of the player and over the line that says the song plays from this
+    machine.
 
 ## The analysis rules that were bugs once
 
@@ -123,6 +141,7 @@ exists for the node test and audit tooling.
 manifest.json            the extension manifest
 src/core/core.js         all the analysis: levels, loudness, key, tempo
 src/sidepanel/           the side panel page, its script and its style
+src/sidepanel/editor.js  the rules of the subtitle editor, on their own
 src/background.js        the service worker, it opens the panel
 src/options/             the address of the local engine
 tools/audit.mjs          the static audit of the source
@@ -131,6 +150,7 @@ tools/wav-reader.mjs     a small WAV reader for the checks
 tools/make-icons.py      the icons
 tools/make-screenshot.py trims a browser screenshot down to the panel
 tests/                   node:test suites
+media/                   the demo of the panel, a gif and a video
 ```
 
 ## Before you call it done

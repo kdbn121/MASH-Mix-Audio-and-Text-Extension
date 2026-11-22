@@ -24,6 +24,22 @@ to a vendor.
 
 ![The side panel showing the steps for a new computer when the engine is not running](screenshots/panel-setup-guide.png)
 
+## The demo
+
+This is the panel doing real work on a real machine: a link is pasted in, the
+engine on this machine fetches it and writes the lyrics, the song is moved in
+steps of five seconds, a line is corrected in Bangla, the line is cut in two
+and the edited file is saved.
+
+![The side panel at work](media/panel-demo.gif)
+
+The same run as a video, with the sound of nothing and the same frames:
+[media/panel-demo.mp4](media/panel-demo.mp4).
+
+The pointer on the screen is drawn into the page for the recording, because a
+picture taken by a browser never carries the pointer of the mouse. Every click,
+every letter and every button in the demo is the real thing.
+
 ## Install
 
 The extension is plain Manifest V3 and it has no build step.
@@ -113,13 +129,61 @@ Under the **Get the Lyrics / Text** button there is a player for the song itself
 | The round button | Plays the song and pauses it again |
 | The bar | Moves with the song and takes it to any moment when you drag it |
 | The two times | The moment the song is at and the length of the song |
+| The two **5s** buttons | Move the song five seconds forward and five seconds back |
 
 The song plays straight from the file you attached, in the browser, on your
 machine. Nothing is sent anywhere to make it play.
 
+**The two five second buttons sit under the bar of the player and over the line
+that says the song plays from this machine.** Press one and the song jumps five
+seconds at once. Hold it down and it keeps jumping in steps of five seconds
+until you let go, which is the quickest way to find the exact moment a line is
+sung without aiming at the bar.
+
 **Click a lyric line and the song goes to that line.** The line you clicked is
 the moment it starts at, and the line under the playhead is marked while the
 song runs, so the words can be followed as they are sung.
+
+### The editor
+
+Under the lyrics there is a third card, **3. Editor**, and it holds the lines
+of the song as a list you can change. The editor is the one truth about the
+words: the lines the player marks, the text file and the subtitle file are all
+written from the same list, so they can never disagree with each other.
+
+| What you see | What it does |
+|---|---|
+| The number on the left | Picks the line. The line that is being worked on is marked |
+| The two times | When the line starts and when it ends. Type over either one |
+| The box of words | The words of the line, and they are yours to change |
+| **play** | Takes the song to the moment that line starts at |
+| **Add a line** | Adds an empty line after the one that is picked |
+| **Split** | Cuts the line in two where the caret is in the box of words |
+| **Merge** | Joins the line that is picked with the one after it |
+| **Remove** | Takes the line that is picked away |
+| **Cut**, **Copy**, **Paste** | Move a line from one place to another |
+| **TEXT** | The plain text file, written as you type |
+| **SRT** | The subtitle file, written as you type |
+| **Download the edited .srt** | Saves the subtitle file with your edits in it |
+| **Download the edited .txt** | Saves the text file with your edits in it |
+
+**The words are held exactly as they were typed.** Nothing in the editor
+rewrites the letters, so a word in Bangla, in Tamil, in Arabic or in Latin is
+carried through whole and in the order the keyboard wrote it. The box of words
+is a plain text box, which is what lets an input method compose it properly.
+
+**The text and the subtitle file are written at once.** Every change is in the
+**TEXT** box and in the **SRT** box before you have looked for it, and the file
+you download carries your edits, not the words the engine first wrote.
+
+**A line never ends before it starts.** When you move the start of a line past
+its end, the end goes with it and the line keeps the length it had, because a
+line that ends before it starts is a broken line and a broken line is not
+written to the file.
+
+The subtitle file is written the way a player reads it: the times are
+`HH:MM:SS,mmm`, the lines are numbered from one, a blank line separates one
+line from the next, and a line with no words in it is left out.
 
 ### Choosing the model
 
